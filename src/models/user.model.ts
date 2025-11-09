@@ -73,12 +73,6 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-/**
- * Indexes for performance
- */
-UserSchema.index({ email: 1 }, { unique: true });
-UserSchema.index({ username: 1 }, { unique: true });
-UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: -1 });
 
 export default model<IUser>('User', UserSchema);

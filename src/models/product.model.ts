@@ -26,7 +26,6 @@ const ProductSchema = new Schema<IProduct>(
       trim: true,
       minlength: 3,
       maxlength: 100,
-      index: true,
     },
     description: {
       type: String,
@@ -39,27 +38,23 @@ const ProductSchema = new Schema<IProduct>(
       type: Number,
       required: true,
       min: 0,
-      index: true,
     },
     stock: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
-      index: true,
     },
     category: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-      index: true,
     },
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     productImage: {
       type: String,

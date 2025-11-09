@@ -32,26 +32,22 @@ const OrderProductSchema = new Schema<IOrderProduct>(
     productId: {
       type: Schema.Types.ObjectId,
       ref: 'Product',
-      required: [true, 'Product ID is required'],
+      required: true,
     },
     name: {
       type: String,
-      required: [true, 'Product name is required'],
+      required: true,
       trim: true,
     },
     price: {
       type: Number,
-      required: [true, 'Product price is required'],
-      min: [0, 'Price cannot be negative'],
+      required: true,
+      min: 0,
     },
     quantity: {
       type: Number,
-      required: [true, 'Quantity is required'],
-      min: [1, 'Quantity must be at least 1'],
-      validate: {
-        validator: Number.isInteger,
-        message: 'Quantity must be an integer',
-      },
+      required: true,
+      min: 1,
     },
   },
   { _id: false }
@@ -65,36 +61,27 @@ const OrderSchema = new Schema<IOrder>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'User ID is required'],
-      index: true,
+      required: true,
     },
     products: {
       type: [OrderProductSchema],
-      required: [true, 'Products are required'],
-      validate: {
-        validator: function (products: IOrderProduct[]) {
-          return products && products.length > 0;
-        },
-        message: 'Order must contain at least one product',
-      },
+      required: true,
     },
     totalPrice: {
       type: Number,
-      required: [true, 'Total price is required'],
-      min: [0, 'Total price cannot be negative'],
-      index: true,
+      required: true,
+      min: 0,
     },
     status: {
       type: String,
       enum: Object.values(OrderStatus),
       default: OrderStatus.PENDING,
       required: true,
-      index: true,
     },
     description: {
       type: String,
       trim: true,
-      maxlength: [500, 'Description cannot exceed 500 characters'],
+      maxlength: 500,
       default: '',
     },
   },
