@@ -2,8 +2,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { BaseRepository } from './BaseRepository';
 import User, { IUser } from '@models/user.model';
-import { CreateResult, FindResult } from '@types/repository.types';
-import { HttpStatus } from '@types/common.types';
+import { CreateResult, FindResult } from '../types/repository.types';
+import { HttpStatus } from '../types/common.types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 
 /**
@@ -37,11 +37,12 @@ export class UserRepository extends BaseRepository<IUser> {
 
       // Handle duplicate key error (unique constraint violation)
       if (error.code === 11000) {
-        const field = Object.keys(error.keyPattern)[0];
+        const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'Field';
+        const fieldName = field || 'Field';
         return {
           success: false,
           statusCode: HttpStatus.BAD_REQUEST,
-          message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`,
+          message: `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} already exists`,
         };
       }
 
@@ -146,9 +147,13 @@ export class UserRepository extends BaseRepository<IUser> {
     };
 
     const secret = process.env.JWT_SECRET;
-    const expiresIn = process.env.JWT_EXPIRES_IN;
-
-    return jwt.sign(payload, secret, { expiresIn });
+    if (!secret) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+    
+    return jwt.sign(payload, secret, {
+      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any,
+    });
   }
 
   /**

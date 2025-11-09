@@ -1,7 +1,7 @@
 import { BaseService } from './BaseService';
 import { UserRepository } from '@repositories/user.repository';
 import { IUser } from '@models/user.model';
-import { HttpStatus } from '@types/common.types';
+import { HttpStatus, UserRole } from '../types/common.types';
 import { ErrorMessages } from '@helpers/index';
 
 /**
@@ -36,7 +36,11 @@ export class UserService extends BaseService<IUser> {
       }
 
       // Create user (password will be hashed in repository)
-      const result = await this.userRepository.create(userData);
+      const userDataWithRole: Partial<IUser> = {
+        ...userData,
+        role: (userData.role as UserRole) || UserRole.USER,
+      };
+      const result = await this.userRepository.create(userDataWithRole);
 
       if (!result.success || !result.data) {
         return result;

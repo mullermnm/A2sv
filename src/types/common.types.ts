@@ -91,7 +91,7 @@ export type MongooseDoc<T> = Document<unknown, object, T> & T;
  * Request with authenticated user
  */
 export interface AuthenticatedUser {
-  id: string;
+  userId: string;
   username: string;
   email: string;
   role: UserRole;

@@ -2,6 +2,7 @@ import { ProductRepository } from '@repositories/product.repository';
 import { IProduct } from '@models/product.model';
 import { HttpStatus } from '../types/common.types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
+import { Types } from 'mongoose';
 
 /**
  * Product Service
@@ -23,10 +24,10 @@ export class ProductService {
       // Add userId to product data
       const productWithUser = {
         ...productData,
-        userId,
+        userId: new Types.ObjectId(userId),
       };
 
-      const result = await this.productRepository.create(productWithUser);
+      const result = await this.productRepository.create(productWithUser as Partial<IProduct>);
 
       if (!result.success) {
         return result;
@@ -66,7 +67,7 @@ export class ProductService {
       }
 
       // Update the product
-      const result = await this.productRepository.update(productId, updateData);
+      const result = await this.productRepository.updateById(productId, updateData);
 
       if (!result.success) {
         return result;
@@ -110,13 +111,13 @@ export class ProductService {
         success: true,
         statusCode: HttpStatus.OK,
         message: search
-          ? `Found ${result.pagination?.totalProducts || 0} products matching "${search}"`
-          : SuccessMessages.DATA_RETRIEVED,
+          ? `Found ${result.totalItems} products matching "${search}"`
+          : 'Products retrieved successfully',
         data: result.data,
-        currentPage: result.pagination?.currentPage,
-        pageSize: result.pagination?.pageSize,
-        totalPages: result.pagination?.totalPages,
-        totalProducts: result.pagination?.totalProducts,
+        currentPage: result.page,
+        pageSize: result.limit,
+        totalPages: result.totalPages,
+        totalProducts: result.totalItems,
       };
     } catch (error) {
       console.error('Error in getProducts:', error);
@@ -177,7 +178,7 @@ export class ProductService {
         };
       }
 
-      const result = await this.productRepository.delete(productId);
+      const result = await this.productRepository.deleteById(productId);
 
       if (!result.success) {
         return result;

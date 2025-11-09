@@ -2,8 +2,8 @@ import request from 'supertest';
 import { Application } from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import createApp from '../src/app';
-import User from '../src/models/user.model';
+import createApp from '@src/app';
+import User from '@src/models/user.model';
 import bcrypt from 'bcrypt';
 
 /**
@@ -24,6 +24,10 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
 
   // Setup: Start in-memory MongoDB and Express app before all tests
   beforeAll(async () => {
+    // Set required environment variables for tests
+    process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing';
+    process.env.JWT_EXPIRES_IN = '7d';
+    
     // Start in-memory MongoDB
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();

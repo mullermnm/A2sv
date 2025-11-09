@@ -2,8 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Document } from 'mongoose';
 import { BaseService } from '@services/BaseService';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
-import { BaseQueryOptions } from '@types/repository.types';
-import { HttpStatus } from '@types/common.types';
+import { BaseQueryOptions } from '../types/repository.types';
 
 /**
  * Generic Base Controller class
@@ -155,7 +154,7 @@ export abstract class BaseController<T extends Document> {
    */
   protected buildFilter(
     filters: Record<string, unknown>,
-    search?: string
+    _search?: string
   ): Record<string, unknown> {
     const filter: Record<string, unknown> = {};
 

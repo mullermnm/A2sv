@@ -3,7 +3,6 @@ import {
   FilterQuery,
   UpdateQuery,
   Document,
-  PopulateOptions,
   Types,
   ClientSession,
   startSession,
@@ -16,8 +15,8 @@ import {
   DeleteResult,
   BaseQueryOptions,
   IBaseRepository,
-} from '@types/repository.types';
-import { HttpStatus } from '@types/common.types';
+} from '../types/repository.types';
+import { HttpStatus } from '../types/common.types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 
 /**

@@ -1,7 +1,4 @@
 import Joi from 'joi';
-import { Request, Response, NextFunction } from 'express';
-import { ErrorResponse } from '@helpers/index';
-import { HttpStatus } from '../../types/common.types';
 
 /**
  * Register Validation Schema (User Story 1)
@@ -36,7 +33,7 @@ export const registerSchema = Joi.object({
 
   password: Joi.string()
     .min(8)
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^])[A-Za-z\d@$!%*?&#^]{8,}$/)
     .required()
     .messages({
       'string.min': 'Password must be at least 8 characters long',

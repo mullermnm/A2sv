@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ApiResponse, PaginatedResponse, HttpStatus } from '@types/common.types';
+import { HttpStatus, ApiResponse, PaginatedResponse } from '../../types/common.types';
 import { SuccessMessages, getSuccessStatusMessage } from '../messages/success-messages';
 
 /**

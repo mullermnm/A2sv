@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { BaseController } from './BaseController';
 import { UserService } from '@services/user.service';
 import { IUser } from '@models/user.model';
@@ -25,7 +25,7 @@ export class UserController extends BaseController<IUser> {
    * Register a new user
    * POST /api/auth/register
    */
-  async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+  async register(req: Request, res: Response): Promise<Response | void> {
     try {
       const { username, email, password, role } = req.body;
 
@@ -42,7 +42,8 @@ export class UserController extends BaseController<IUser> {
 
       return SuccessResponse.created(res, result.data, result.message);
     } catch (error) {
-      next(error);
+      console.error('Error in register controller:', error);
+      return ErrorResponse.send(res, 'Internal server error', 500);
     }
   }
 
@@ -50,7 +51,7 @@ export class UserController extends BaseController<IUser> {
    * Login user
    * POST /api/auth/login
    */
-  async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+  async login(req: Request, res: Response): Promise<Response | void> {
     try {
       const { email, password } = req.body;
 
@@ -62,7 +63,8 @@ export class UserController extends BaseController<IUser> {
 
       return SuccessResponse.send(res, result.data, result.message);
     } catch (error) {
-      next(error);
+      console.error('Error in login controller:', error);
+      return ErrorResponse.send(res, 'Internal server error', 500);
     }
   }
 }

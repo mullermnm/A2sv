@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { BaseController } from './BaseController';
 import { ProductService } from '@services/product.service';
-import { IProduct } from '@models/product.model';
 import { SuccessResponse, ErrorResponse } from '@helpers/index';
 import productRepository from '@repositories/product.repository';
 
@@ -9,11 +7,10 @@ import productRepository from '@repositories/product.repository';
  * Product Controller
  * Handles HTTP requests for product operations
  */
-export class ProductController extends BaseController<IProduct> {
+export class ProductController {
   private productService: ProductService;
 
   constructor(productService: ProductService) {
-    super();
     this.productService = productService;
   }
 
@@ -37,7 +34,7 @@ export class ProductController extends BaseController<IProduct> {
         return ErrorResponse.send(res, result.message, result.statusCode);
       }
 
-      return SuccessResponse.send(res, result.message, result.data, result.statusCode);
+      return SuccessResponse.send(res, result.data, result.message, result.statusCode);
     } catch (error) {
       next(error);
     }
@@ -51,6 +48,9 @@ export class ProductController extends BaseController<IProduct> {
   update = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
     try {
       const { id } = req.params;
+      if (!id) {
+        return ErrorResponse.send(res, 'Product ID is required', 400);
+      }
 
       const result = await this.productService.updateProduct(id, req.body);
 
@@ -58,7 +58,7 @@ export class ProductController extends BaseController<IProduct> {
         return ErrorResponse.send(res, result.message, result.statusCode);
       }
 
-      return SuccessResponse.send(res, result.message, result.data, result.statusCode);
+      return SuccessResponse.send(res, result.data, result.message, result.statusCode);
     } catch (error) {
       next(error);
     }
@@ -87,10 +87,10 @@ export class ProductController extends BaseController<IProduct> {
         success: true,
         message: result.message,
         data: result.data,
-        currentPage: result.currentPage,
-        pageSize: result.pageSize,
-        totalPages: result.totalPages,
-        totalProducts: result.totalProducts,
+        currentPage: (result as any).currentPage,
+        pageSize: (result as any).pageSize,
+        totalPages: (result as any).totalPages,
+        totalProducts: (result as any).totalProducts,
         errors: null,
       });
     } catch (error) {
@@ -106,6 +106,9 @@ export class ProductController extends BaseController<IProduct> {
   getById = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
     try {
       const { id } = req.params;
+      if (!id) {
+        return ErrorResponse.send(res, 'Product ID is required', 400);
+      }
 
       const result = await this.productService.getProductById(id);
 
@@ -113,7 +116,7 @@ export class ProductController extends BaseController<IProduct> {
         return ErrorResponse.send(res, result.message, result.statusCode);
       }
 
-      return SuccessResponse.send(res, result.message, result.data, result.statusCode);
+      return SuccessResponse.send(res, result.data, result.message, result.statusCode);
     } catch (error) {
       next(error);
     }
@@ -127,6 +130,9 @@ export class ProductController extends BaseController<IProduct> {
   delete = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
     try {
       const { id } = req.params;
+      if (!id) {
+        return ErrorResponse.send(res, 'Product ID is required', 400);
+      }
 
       const result = await this.productService.deleteProduct(id);
 
@@ -134,7 +140,7 @@ export class ProductController extends BaseController<IProduct> {
         return ErrorResponse.send(res, result.message, result.statusCode);
       }
 
-      return SuccessResponse.send(res, result.message, null, result.statusCode);
+      return SuccessResponse.send(res, undefined, result.message, result.statusCode);
     } catch (error) {
       next(error);
     }

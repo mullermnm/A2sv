@@ -1,6 +1,6 @@
 import { BaseRepository } from './BaseRepository';
 import Product, { IProduct } from '@models/product.model';
-import { FindAllResult, FindResult } from '@types/repository.types';
+import { FindAllResult, FindResult } from '../types/repository.types';
 import { HttpStatus } from '../types/common.types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 import { FilterQuery } from 'mongoose';
@@ -52,19 +52,22 @@ export class ProductRepository extends BaseRepository<IProduct> {
       return {
         success: true,
         data: products,
+        page,
+        limit,
+        totalPages,
+        totalItems: total,
         statusCode: HttpStatus.OK,
         message: SuccessMessages.DATA_RETRIEVED,
-        pagination: {
-          currentPage: page,
-          pageSize: limit,
-          totalPages,
-          totalProducts: total,
-        },
-      };
+      } as any;
     } catch (error) {
       console.error('Error in findAllPaginated:', error);
       return {
         success: false,
+        data: [],
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+        totalItems: 0,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: ErrorMessages.DATABASE_ERROR,
       };
@@ -105,6 +108,10 @@ export class ProductRepository extends BaseRepository<IProduct> {
       return {
         success: true,
         data: products,
+        page: 1,
+        limit: products.length,
+        totalPages: 1,
+        totalItems: products.length,
         statusCode: HttpStatus.OK,
         message: SuccessMessages.DATA_RETRIEVED,
       };
@@ -112,6 +119,11 @@ export class ProductRepository extends BaseRepository<IProduct> {
       console.error('Error in findByCategory:', error);
       return {
         success: false,
+        data: [],
+        page: 1,
+        limit: 0,
+        totalPages: 0,
+        totalItems: 0,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: ErrorMessages.DATABASE_ERROR,
       };
@@ -132,6 +144,10 @@ export class ProductRepository extends BaseRepository<IProduct> {
       return {
         success: true,
         data: products,
+        page: 1,
+        limit: products.length,
+        totalPages: 1,
+        totalItems: products.length,
         statusCode: HttpStatus.OK,
         message: SuccessMessages.DATA_RETRIEVED,
       };
@@ -139,6 +155,11 @@ export class ProductRepository extends BaseRepository<IProduct> {
       console.error('Error in findInStock:', error);
       return {
         success: false,
+        data: [],
+        page: 1,
+        limit: 0,
+        totalPages: 0,
+        totalItems: 0,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: ErrorMessages.DATABASE_ERROR,
       };

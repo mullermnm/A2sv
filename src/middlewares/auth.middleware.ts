@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import config from '@config/index';
-import { AuthenticatedUser, UserRole, HttpStatus } from '@types/common.types';
-import { ErrorResponse, ErrorMessages } from '@helpers/index';
+import config from '../config/index';
+import { AuthenticatedUser, UserRole, HttpStatus } from '../types/common.types';
+import { ErrorResponse, ErrorMessages } from '../helpers/index';
 
 /**
  * Extend Express Request to include authenticated user
@@ -15,7 +15,7 @@ export interface AuthRequest extends Request {
  * JWT Payload structure
  */
 interface JWTPayload {
-  id: string;
+  userId: string;
   username: string;
   email: string;
   role: UserRole;
@@ -63,7 +63,7 @@ export const authenticate = async (
     // Verify JWT token
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.error('JWT_SECRET_KEY is not defined in environment variables');
+      console.error('JWT_SECRET is not defined in environment variables');
       return ErrorResponse.send(
         res,
         ErrorMessages.INTERNAL_ERROR,
@@ -72,23 +72,17 @@ export const authenticate = async (
     }
 
     // Verify token
-    jwt.verify(token, jwtSecret, (err, decoded) => {
-      if (err) {
-        return ErrorResponse.unauthorized(res, ErrorMessages.INVALID_TOKEN);
-      }
+    const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
+    
+    // Attach user to request
+    authReq.user = {
+      userId: decoded.userId,
+      username: decoded.username,
+      email: decoded.email,
+      role: decoded.role,
+    };
 
-      const payload = decoded as JWTPayload;
-
-      // Attach user to request
-      authReq.user = {
-        id: payload.id,
-        username: payload.username,
-        email: payload.email,
-        role: payload.role,
-      };
-
-      next();
-    });
+    next();
   } catch (error) {
     console.error('Authentication error:', error);
     return ErrorResponse.unauthorized(res, ErrorMessages.UNAUTHORIZED);
@@ -130,7 +124,7 @@ export const adminOnly = authorize(UserRole.ADMIN);
  */
 export const optionalAuth = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -146,23 +140,24 @@ export const optionalAuth = async (
       return next();
     }
 
-    const jwtSecret = process.env.JWT_SECRET_KEY;
+    const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       return next();
     }
 
-    jwt.verify(token, jwtSecret, (err, decoded) => {
-      if (!err && decoded) {
-        const payload = decoded as JWTPayload;
-        authReq.user = {
-          id: payload.id,
-          username: payload.username,
-          email: payload.email,
-          role: payload.role,
-        };
-      }
-      next();
-    });
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
+      authReq.user = {
+        userId: decoded.userId,
+        username: decoded.username,
+        email: decoded.email,
+        role: decoded.role,
+      };
+    } catch (err) {
+      // Silently fail for optional auth
+    }
+    
+    next();
   } catch (error) {
     // Silently fail for optional auth
     next();

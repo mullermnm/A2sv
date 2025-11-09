@@ -1,6 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import bcrypt from 'bcrypt';
-import { UserRole } from '@types/common.types';
+import { UserRole } from '../types/common.types';
 
 /**
  * User Document Interface
@@ -58,14 +57,14 @@ const UserSchema = new Schema<IUser>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret) => {
+      transform: (_doc, ret: any) => {
         delete ret.password;
         delete ret.__v;
         return ret;
       },
     },
     toObject: {
-      transform: (_doc, ret) => {
+      transform: (_doc, ret: any) => {
         delete ret.password;
         delete ret.__v;
         return ret;
