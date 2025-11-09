@@ -3,52 +3,43 @@ import { createClient, RedisClientType } from 'redis';
 let redisClient: RedisClientType | null = null;
 
 /**
- * Initialize Redis connection
+ * Initialize Redis connection (Optional - for caching bonus feature)
+ * To use Redis: Install Redis server and run it locally
+ * Windows: Download from https://github.com/microsoftarchive/redis/releases
+ * Mac: brew install redis && brew services start redis
+ * Linux: sudo apt-get install redis-server && sudo systemctl start redis
  */
-export const connectRedis = async (): Promise<RedisClientType> => {
+export const connectRedis = async (): Promise<void> => {
   try {
-    if (redisClient && redisClient.isOpen) {
-      return redisClient;
-    }
-
-    const client = createClient({
+    redisClient = createClient({
       socket: {
         host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        port: Number(process.env.REDIS_PORT) || 6379,
+        connectTimeout: 2000, // 2 second timeout
+        reconnectStrategy: () => false, // Don't retry connection
       },
-      password: process.env.REDIS_PASSWORD || undefined,
     });
 
-    client.on('error', (error) => {
-      console.error('❌ Redis client error:', error);
+    // Suppress error logs - Redis is optional
+    redisClient.on('error', () => {
+      // Silent - Redis is optional for caching
     });
 
-    client.on('connect', () => {
-      console.log('🔄 Redis client connecting...');
-    });
-
-    client.on('ready', () => {
+    redisClient.on('connect', () => {
       console.log('✅ Redis connected successfully');
     });
 
-    await client.connect();
-    redisClient = client;
-
-    return client;
+    await redisClient.connect();
   } catch (error) {
-    console.error('❌ Failed to connect to Redis:', error);
-    console.warn('⚠️  Application will continue without Redis cache');
-    // Don't exit - app can work without cache
-    throw error;
+    // Silently fail - Redis is optional
+    redisClient = null;
   }
 };
 
 /**
  * Get Redis client instance
  */
-export const getRedisClient = (): RedisClientType | null => {
-  return redisClient;
-};
+export const getRedisClient = () => redisClient;
 
 /**
  * Disconnect from Redis

@@ -23,7 +23,8 @@
       "@middlewares/*": ["src/middlewares/*"],
       "@helpers/*": ["src/helpers/*"],
       "@interfaces/*": ["src/interfaces/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@validators/*": ["src/validators/*"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,

@@ -20,11 +20,11 @@ tags:
   - name: Health
     description: API health check endpoints
   - name: Authentication
-    description: User authentication and authorization
+    description: User registration and login
   - name: Products
-    description: Product management operations
+    description: Product management operations (CRUD, Search)
   - name: Orders
-    description: Order management operations
+    description: Order placement and history
 
 components:
   securitySchemes:
@@ -35,6 +35,232 @@ components:
       description: Enter JWT token in format - Bearer <token>
 
   schemas:
+    # User Schemas
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          description: Alphanumeric username (letters and numbers only)
+          pattern: '^[a-zA-Z0-9]+$'
+          example: johndoe123
+        email:
+          type: string
+          format: email
+          description: Valid email address
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          description: Minimum 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-zA-Z\\d@$!%*?&]{8,}$'
+          example: Password123!
+        role:
+          type: string
+          enum: [user, admin]
+          default: user
+          description: User role (optional, defaults to 'user')
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: Password123!
+
+    UserResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        username:
+          type: string
+          example: johndoe123
+        email:
+          type: string
+          example: john@example.com
+        role:
+          type: string
+          enum: [user, admin]
+          example: user
+        createdAt:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        token:
+          type: string
+          description: JWT token for authentication
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    # Product Schemas
+    ProductRequest:
+      type: object
+      required:
+        - name
+        - description
+        - price
+        - stock
+        - category
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+          example: Wireless Headphones
+        description:
+          type: string
+          minLength: 10
+          example: High-quality wireless headphones with noise cancellation
+        price:
+          type: number
+          minimum: 0.01
+          example: 99.99
+        stock:
+          type: integer
+          minimum: 0
+          example: 50
+        category:
+          type: string
+          example: Electronics
+
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        stock:
+          type: integer
+        category:
+          type: string
+        userId:
+          type: string
+          description: ID of the admin who created the product
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProductsListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Products retrieved successfully
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        pageNumber:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 10
+        totalSize:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 10
+        errors:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    # Order Schemas
+    OrderProductRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    CreateOrderRequest:
+      type: array
+      items:
+        $ref: '#/components/schemas/OrderProductRequest'
+      example:
+        - productId: 507f1f77bcf86cd799439011
+          quantity: 2
+        - productId: 507f1f77bcf86cd799439012
+          quantity: 1
+
+    OrderProduct:
+      type: object
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+
+    Order:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        userId:
+          type: string
+        description:
+          type: string
+        totalPrice:
+          type: number
+          example: 299.97
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled]
+          example: pending
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderProduct'
+        createdAt:
+          type: string
+          format: date-time
+
+    # Base Response Schemas
     BaseResponse:
       type: object
       properties:
@@ -74,6 +300,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Unauthorized - Invalid credentials
+            errors: null
     
     ForbiddenError:
       description: User does not have permission to access this resource
@@ -81,6 +311,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Forbidden - Admin access required
+            errors: null
     
     NotFoundError:
       description: The requested resource was not found
@@ -88,8 +322,26 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Resource not found
+            errors: null
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            message: Validation failed
+            errors:
+              - Email already exists
+              - Password must be at least 8 characters
 
 paths:
+  # Health Endpoints
   /health:
     get:
       tags:
@@ -104,18 +356,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: OK
+                  success:
+                    type: boolean
+                    example: true
                   message:
                     type: string
-                    example: A2SV E-commerce API is running
-                  timestamp:
-                    type: string
-                    format: date-time
-                  uptime:
-                    type: number
-                    description: Server uptime in seconds
+                    example: Server is running
+                  data:
+                    type: object
+                    properties:
+                      uptime:
+                        type: number
+                      timestamp:
+                        type: string
+                        format: date-time
 
   /ping:
     get:
@@ -130,3 +384,351 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BaseResponse'
+
+  # Authentication Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user (User Story 1)
+      description: Register a new user account with username, email, and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: User registered successfully
+                  data:
+                    $ref: '#/components/schemas/AuthResponse'
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    nullable: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user (User Story 2)
+      description: Authenticate user and return JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Login successful
+                  data:
+                    $ref: '#/components/schemas/AuthResponse'
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  # Product Endpoints
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get list of products (User Stories 5 & 6)
+      description: Retrieve paginated list of products with optional search
+      parameters:
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: limit
+          in: query
+          description: Number of products per page
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: search
+          in: query
+          description: Search term for product name (case-insensitive, partial match)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Products retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductsListResponse'
+
+    post:
+      tags:
+        - Products
+      summary: Create product (User Story 3)
+      description: Create a new product (Admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Product created successfully
+                  data:
+                    $ref: '#/components/schemas/Product'
+                  errors:
+                    nullable: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID (User Story 7)
+      description: Retrieve details of a specific product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Product'
+                  errors:
+                    nullable: true
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Products
+      summary: Update product (User Story 4)
+      description: Update an existing product (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductRequest'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Product updated successfully
+                  data:
+                    $ref: '#/components/schemas/Product'
+                  errors:
+                    nullable: true
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Products
+      summary: Delete product (User Story 8)
+      description: Permanently delete a product from catalog (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Product ID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Product deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Product deleted successfully
+                  errors:
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Order Endpoints
+  /orders:
+    post:
+      tags:
+        - Orders
+      summary: Place new order (User Story 9)
+      description: Create a new order with multiple products (User role required, uses database transactions)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Order placed successfully
+                  data:
+                    $ref: '#/components/schemas/Order'
+                  errors:
+                    nullable: true
+        '400':
+          description: Insufficient stock or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                success: false
+                message: Insufficient stock for Product X
+                errors: null
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Orders
+      summary: Get order history (User Story 10)
+      description: Retrieve list of orders for authenticated user only
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Orders retrieved successfully
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  errors:
+                    nullable: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

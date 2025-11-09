@@ -1,4 +1,7 @@
 import { Router, Request, Response } from 'express';
+import authRoutes from '@src/routes/auth.routes'; // User routes for auth endpoints
+import productRoutes from '@routes/product.routes';
+import orderRoutes from '@routes/order.routes';
 
 /**
  * Combines and exports all route modules
@@ -7,39 +10,39 @@ import { Router, Request, Response } from 'express';
 const router = Router();
 
 /**
- * Health check endpoint
- * GET /api/health
+ * Health Check Route
+ * @route GET /api/health
+ * @access Public
  */
 router.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
-    status: 'OK',
-    message: 'A2SV E-commerce API is running',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
-
-/**
- * Ping endpoint for Swagger demo
- * GET /api/ping
- */
-router.get('/ping', (_req: Request, res: Response) => {
-  res.status(200).json({
     success: true,
-    message: 'Pong! API is responsive',
+    message: 'Server is running',
     data: {
+      uptime: process.uptime(),
       timestamp: new Date().toISOString(),
     },
   });
 });
 
-// Future route imports will be added here:
-// import authRoutes from '@routes/auth.routes';
-// import productRoutes from '@routes/product.routes';
-// import orderRoutes from '@routes/order.routes';
-//
-// router.use('/auth', authRoutes);
-// router.use('/products', productRoutes);
-// router.use('/orders', orderRoutes);
+/**
+ * Ping Route
+ * @route GET /api/ping
+ * @access Public
+ */
+router.get('/ping', (_req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: 'pong',
+    data: null,
+  });
+});
+
+/**
+ * API Routes
+ */
+router.use('/auth', authRoutes); // POST /api/auth/register, POST /api/auth/login
+router.use('/products', productRoutes);
+router.use('/orders', orderRoutes);
 
 export default router;
