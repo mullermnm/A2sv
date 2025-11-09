@@ -1,4 +1,13 @@
-import { Model, FilterQuery, UpdateQuery, Document, PopulateOptions, Types, ClientSession, startSession } from 'mongoose';
+import {
+  Model,
+  FilterQuery,
+  UpdateQuery,
+  Document,
+  PopulateOptions,
+  Types,
+  ClientSession,
+  startSession,
+} from 'mongoose';
 import {
   FindResult,
   FindAllResult,
@@ -29,10 +38,10 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
     try {
       if (!Types.ObjectId.isValid(id)) {
         return {
-            success: false,
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: ErrorMessages.INVALID_ID,
-        }
+          success: false,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: ErrorMessages.INVALID_ID,
+        };
       }
 
       let query = this.model.findById(id);
@@ -312,7 +321,7 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
   /**
    * Start a MongoDB transaction session
    * Use this for operations that need atomicity (e.g., order placement with stock updates)
-   * 
+   *
    * @example
    * const session = await repository.startTransaction();
    * try {

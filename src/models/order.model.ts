@@ -137,18 +137,18 @@ OrderSchema.virtual('totalItems').get(function () {
  */
 OrderSchema.pre('save', function (next) {
   const order = this as IOrder;
-  
+
   // Calculate total price from products
   if (order.products && order.products.length > 0) {
     const calculatedTotal = order.products.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
-    
+
     // Round to 2 decimal places
     order.totalPrice = Math.round(calculatedTotal * 100) / 100;
   }
-  
+
   next();
 });
 

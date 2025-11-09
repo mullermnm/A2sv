@@ -61,7 +61,7 @@ export const authenticate = async (
     }
 
     // Verify JWT token
-    const jwtSecret = process.env.JWT_SECRET_KEY;
+    const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       console.error('JWT_SECRET_KEY is not defined in environment variables');
       return ErrorResponse.send(

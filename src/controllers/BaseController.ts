@@ -153,7 +153,10 @@ export abstract class BaseController<T extends Document> {
    * Build filter object from query parameters
    * Override this method in child controllers for custom filtering
    */
-  protected buildFilter(filters: Record<string, unknown>, search?: string): Record<string, unknown> {
+  protected buildFilter(
+    filters: Record<string, unknown>,
+    search?: string
+  ): Record<string, unknown> {
     const filter: Record<string, unknown> = {};
 
     // Add custom filter logic here

@@ -64,7 +64,9 @@ export const ErrorMessages = {
  * Get error status message by code
  */
 export const getErrorStatusMessage = (statusCode: number): string => {
-  return StatusErrorMessages[statusCode as keyof typeof StatusErrorMessages] || StatusErrorMessages[500];
+  return (
+    StatusErrorMessages[statusCode as keyof typeof StatusErrorMessages] || StatusErrorMessages[500]
+  );
 };
 
 /**

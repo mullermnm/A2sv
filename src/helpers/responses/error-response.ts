@@ -28,12 +28,7 @@ export const sendValidationError = (
   errors: string[],
   message?: string
 ): Response => {
-  return sendError(
-    res,
-    message || ErrorMessages.VALIDATION_FAILED,
-    HttpStatus.BAD_REQUEST,
-    errors
-  );
+  return sendError(res, message || ErrorMessages.VALIDATION_FAILED, HttpStatus.BAD_REQUEST, errors);
 };
 
 /**

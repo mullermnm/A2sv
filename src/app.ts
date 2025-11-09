@@ -50,10 +50,14 @@ const createApp = (): Application => {
   // Swagger Documentation
   // ===================
   const swaggerDocument = YAML.load(path.join(__dirname, 'docs', 'swagger.yaml'));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'A2SV E-commerce API Docs',
-  }));
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'A2SV E-commerce API Docs',
+    })
+  );
 
   // ===================
   // Static Files
@@ -107,4 +111,8 @@ const createApp = (): Application => {
   return app;
 };
 
+// Named export for testing
+export { createApp };
+
+// Default export for server
 export default createApp;

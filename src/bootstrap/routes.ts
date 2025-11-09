@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import authRoutes from '@src/routes/auth.routes'; // User routes for auth endpoints
+import authRoutes from '@routes/auth.routes';
 import productRoutes from '@routes/product.routes';
 import orderRoutes from '@routes/order.routes';
 

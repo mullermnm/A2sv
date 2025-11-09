@@ -15,7 +15,6 @@ export class UserRepository extends BaseRepository<IUser> {
     super(User);
   }
 
-
   hashPassword(password: string): string {
     return bcrypt.hashSync(password, 10);
   }
@@ -35,7 +34,7 @@ export class UserRepository extends BaseRepository<IUser> {
       return await super.create(userData);
     } catch (error: any) {
       console.error('Error in UserRepository.create:', error);
-      
+
       // Handle duplicate key error (unique constraint violation)
       if (error.code === 11000) {
         const field = Object.keys(error.keyPattern)[0];
@@ -60,12 +59,12 @@ export class UserRepository extends BaseRepository<IUser> {
   async findByEmail(email: string, includePassword = false): Promise<FindResult<IUser>> {
     try {
       let query = this.model.findOne({ email });
-      
+
       // Include password field if needed (for login)
       if (includePassword) {
         query = query.select('+password');
       }
-      
+
       const user = await query.exec();
 
       if (!user) {

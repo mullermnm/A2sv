@@ -34,7 +34,7 @@ const startServer = async (): Promise<void> => {
     // Start Server
     // ===================
     const PORT = process.env.PORT || 5000;
-    
+
     app.listen(PORT, () => {
       console.log('\n' + '='.repeat(60));
       console.log('🚀 A2SV E-commerce API Server Started Successfully');

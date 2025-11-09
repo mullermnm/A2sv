@@ -18,7 +18,11 @@ const ensureDirectoryExists = (directory: string): void => {
  */
 const storage = (destination: string): StorageEngine => {
   return multer.diskStorage({
-    destination: function (req: Request, file: Express.Multer.File, next: (error: Error | null, destination: string) => void) {
+    destination: function (
+      req: Request,
+      file: Express.Multer.File,
+      next: (error: Error | null, destination: string) => void
+    ) {
       const dest = `./storage/${destination}/${file.fieldname}`;
       try {
         ensureDirectoryExists(dest);
@@ -29,7 +33,11 @@ const storage = (destination: string): StorageEngine => {
         next(err as Error, dest);
       }
     },
-    filename: function (req: Request, file: Express.Multer.File, next: (error: Error | null, filename: string) => void) {
+    filename: function (
+      req: Request,
+      file: Express.Multer.File,
+      next: (error: Error | null, filename: string) => void
+    ) {
       const fileInfo = {
         originalname: file.originalname,
         mimetype: file.mimetype,
@@ -57,7 +65,7 @@ const fileFilter = function (
     fieldname: file.fieldname,
     originalname: file.originalname,
   });
-  
+
   if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('application/pdf')) {
     console.log('File accepted:', file.originalname);
     next(null, true);
@@ -88,7 +96,10 @@ const saveFileToBody = (req: Request, fieldname: string): void => {
 /**
  * Save uploaded file(s) to request body asynchronously
  */
-const saveFileToBodyAsync = async (req: Request, fieldname: string): Promise<{ error: boolean; message?: string }> => {
+const saveFileToBodyAsync = async (
+  req: Request,
+  fieldname: string
+): Promise<{ error: boolean; message?: string }> => {
   try {
     if (req.file) {
       req.body = {
@@ -141,17 +152,17 @@ const saveMultipleFieldsToBody = async (
 /**
  * Upload file helper factory
  * Creates multer middleware for single, array, or multiple field uploads
- * 
+ *
  * @param destination - Storage destination folder (e.g., 'products', 'users')
  * @returns Object with single, array, and fields upload methods
- * 
+ *
  * @example
  * // In routes file:
  * import uploadFile from '@helpers/multer.helper';
- * 
+ *
  * const upload = uploadFile('products');
  * router.post('/products', upload.single('productImage'), productController.create);
- * 
+ *
  * // The file path will be automatically saved to req.body.productImage
  * // Controller can directly save: { ...req.body } to database
  */
@@ -204,7 +215,7 @@ export default function uploadFile(destination: string) {
     /**
      * Upload multiple fields
      * Each field's file(s) will be saved to req.body[fieldname]
-     * 
+     *
      * @param fields - Array of field objects with name and maxCount
      * @example
      * upload.fields([

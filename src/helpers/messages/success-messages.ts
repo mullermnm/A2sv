@@ -43,7 +43,10 @@ export const SuccessMessages = {
  * Get success status message by code
  */
 export const getSuccessStatusMessage = (statusCode: number): string => {
-  return StatusSuccessMessages[statusCode as keyof typeof StatusSuccessMessages] || StatusSuccessMessages[200];
+  return (
+    StatusSuccessMessages[statusCode as keyof typeof StatusSuccessMessages] ||
+    StatusSuccessMessages[200]
+  );
 };
 
 /**

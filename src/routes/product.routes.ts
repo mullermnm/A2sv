@@ -1,75 +1,53 @@
 import { Router } from 'express';
 import { authenticate, adminOnly } from '@middlewares/auth.middleware';
-import uploadFile from '@helpers/multer.helper';
-// import { ProductController } from '@controllers/product.controller';
+import { validate } from '@validators/middleware';
+import { createProductSchema, updateProductSchema } from '@validators/schemas/product.validator';
+import productController from '@controllers/product.controller';
 
 const router = Router();
-// const productController = new ProductController();
-const productUpload = uploadFile('products');
 
 /**
  * @route   GET /api/products
- * @desc    Get all products with pagination and search
+ * @desc    Get all products with pagination and search (User Stories 5 & 6)
  * @access  Public
- * @query   page, limit, search
+ * @query   page, limit/pageSize, search (optional)
  */
-router.get('/', (req, res) => {
-  // productController.getAll(req, res)
-  res.status(501).json({ message: 'Get products endpoint - not implemented yet' });
-});
+router.get('/', productController.list);
 
 /**
  * @route   GET /api/products/:id
- * @desc    Get single product by ID
+ * @desc    Get single product by ID (User Story 7)
  * @access  Public
  */
-router.get('/:id', (req, res) => {
-  // productController.getById(req, res)
-  res.status(501).json({ message: 'Get product by ID endpoint - not implemented yet' });
-});
+router.get('/:id', productController.getById);
 
 /**
  * @route   POST /api/products
- * @desc    Create a new product (Admin only)
+ * @desc    Create a new product (User Story 3)
  * @access  Private/Admin
- * @body    name, description, price, stock, category, productImage (file)
+ * @body    name, description, price, stock, category
  */
-router.post(
-  '/',
-  authenticate,
-  adminOnly,
-  productUpload.single('productImage'), // Multer will save file path to req.body.productImage
-  (req, res) => {
-    // productController.create(req, res)
-    res.status(501).json({ message: 'Create product endpoint - not implemented yet' });
-  }
-);
+router.post('/', authenticate, adminOnly, validate(createProductSchema), productController.create);
 
 /**
  * @route   PUT /api/products/:id
- * @desc    Update a product (Admin only)
+ * @desc    Update a product (User Story 4)
  * @access  Private/Admin
- * @body    name, description, price, stock, category, productImage (file) - all optional
+ * @body    name, description, price, stock, category - all optional
  */
 router.put(
   '/:id',
   authenticate,
   adminOnly,
-  productUpload.single('productImage'), // Optional image update
-  (req, res) => {
-    // productController.update(req, res)
-    res.status(501).json({ message: 'Update product endpoint - not implemented yet' });
-  }
+  validate(updateProductSchema),
+  productController.update
 );
 
 /**
  * @route   DELETE /api/products/:id
- * @desc    Delete a product (Admin only)
+ * @desc    Delete a product (User Story 8)
  * @access  Private/Admin
  */
-router.delete('/:id', authenticate, adminOnly, (req, res) => {
-  // productController.delete(req, res)
-  res.status(501).json({ message: 'Delete product endpoint - not implemented yet' });
-});
+router.delete('/:id', authenticate, adminOnly, productController.delete);
 
 export default router;

@@ -7,7 +7,7 @@ export const seedDatabase = async (): Promise<void> => {
   try {
     console.log('🌱 Database seeding not yet implemented');
     console.log('📝 This will be used to populate test data in future phases');
-    
+
     // TODO: Implement seeding logic
     // - Create admin user
     // - Create sample products

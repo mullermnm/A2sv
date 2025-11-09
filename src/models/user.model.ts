@@ -12,7 +12,7 @@ export interface IUser extends Document {
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Instance methods
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
