@@ -26,6 +26,7 @@ const storage = (destination: string): StorageEngine => {
       const dest = `./storage/${destination}/${file.fieldname}`;
       try {
         ensureDirectoryExists(dest);
+        console.log('req:', req);
         console.log('Directory ensured:', dest);
         next(null, dest);
       } catch (err) {
@@ -44,6 +45,7 @@ const storage = (destination: string): StorageEngine => {
         fieldname: file.fieldname,
       };
       console.log('Processing file:', fileInfo);
+      console.log('req:', req);
 
       const filename = `${uuidv4()}${path.extname(file.originalname)}`;
       console.log('Generated filename:', filename);
@@ -65,6 +67,7 @@ const fileFilter = function (
     fieldname: file.fieldname,
     originalname: file.originalname,
   });
+  console.log('req:', req);
 
   if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('application/pdf')) {
     console.log('File accepted:', file.originalname);
@@ -129,13 +132,15 @@ const saveFileToBodyAsync = async (
  */
 const saveMultipleFieldsToBody = async (
   req: Request,
-  fields: { name: string; maxCount: number }[]
+  _fields: { name: string; maxCount: number }[]
 ): Promise<{ error: boolean; message?: string }> => {
   try {
     if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
       Object.keys(req.files).forEach((key) => {
         const files = (req.files as { [fieldname: string]: Express.Multer.File[] })[key];
-        req.body[key] = files.length === 1 ? files[0] : files;
+        if (files) {
+          req.body[key] = files.length === 1 ? files[0] : files;
+        }
       });
     }
     return {
@@ -182,10 +187,11 @@ export default function uploadFile(destination: string) {
      */
     single: (fieldname: string) => {
       return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const customNext = (err: any) => {
+        const customNext = (err: any): void => {
           if (err) {
             console.error('Multer error:', err);
-            return res.status(400).json({ error: true, message: err.message });
+            res.status(400).json({ error: true, message: err.message });
+            return;
           }
           saveFileToBody(req, fieldname);
           next();
@@ -225,10 +231,11 @@ export default function uploadFile(destination: string) {
      */
     fields: (fields: { name: string; maxCount: number }[]) => {
       return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const customNext = async (err: any) => {
+        const customNext = async (err: any): Promise<void> => {
           if (err) {
             console.error('Multer error:', err);
-            return res.status(400).json({ error: true, message: err.message });
+            res.status(400).json({ error: true, message: err.message });
+            return;
           }
           console.log('Files after multer processing:', req.files);
           const { error } = await saveMultipleFieldsToBody(req, fields);

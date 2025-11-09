@@ -101,13 +101,13 @@ const OrderSchema = new Schema<IOrder>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret) => {
+      transform: (_doc, ret: any) => {
         delete ret.__v;
         return ret;
       },
     },
     toObject: {
-      transform: (_doc, ret) => {
+      transform: (_doc, ret: any) => {
         delete ret.__v;
         return ret;
       },
