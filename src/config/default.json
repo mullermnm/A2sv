@@ -1,0 +1,21 @@
+{
+  "app": {
+    "name": "A2SV E-commerce API",
+    "version": "1.0.0",
+    "description": "Node.js TypeScript REST API for E-commerce Platform"
+  },
+  "unprotected_routes": [
+    "/api/health",
+    "/api/auth/register",
+    "/api/auth/login",
+    "/api/products",
+    "/api/products/:id",
+    "/api-docs"
+  ],
+  "static_routes": ["uploads"],
+  "pagination": {
+    "defaultPage": 1,
+    "defaultPageSize": 10,
+    "maxPageSize": 100
+  }
+}
