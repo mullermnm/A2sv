@@ -11,6 +11,7 @@ export interface IProduct extends Document {
   category: string;
   userId: Types.ObjectId;
   productImage?: string; // Optional: path to product image
+  status: 'active' | 'deleted'; // Status for soft delete
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,7 +60,12 @@ const ProductSchema = new Schema<IProduct>(
     productImage: {
       type: String,
       trim: true,
-      default: null,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'deleted'],
+      default: 'active',
+      required: true,
     },
   },
   {

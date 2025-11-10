@@ -1,6 +1,6 @@
 import { ProductRepository } from '@repositories/product.repository';
 import { IProduct } from '@models/product.model';
-import { HttpStatus } from '../types/common.types';
+import { HttpStatus } from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 import { Types } from 'mongoose';
 

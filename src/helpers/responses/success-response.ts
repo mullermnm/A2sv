@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { HttpStatus, ApiResponse, PaginatedResponse } from '../../types/common.types';
-import { SuccessMessages, getSuccessStatusMessage } from '../messages/success-messages';
+import { HttpStatus, ApiResponse, PaginatedResponse } from '@src/types';
+import { SuccessMessages, getSuccessStatusMessage } from '@src/helpers/index';
 
 /**
  * Send success response

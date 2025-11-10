@@ -1,9 +1,8 @@
 import { ClientSession, Types } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
 import Order, { IOrder, IOrderProduct } from '../models/order.model';
-import { CreateResult, FindAllResult } from '../types/repository.types';
-import { HttpStatus, OrderStatus } from '../types/common.types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
+import { CreateResult, FindAllResult, HttpStatus, OrderStatus } from '@src/types';
 
 /**
  * Order Repository

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config/index';
-import { AuthenticatedUser, UserRole, HttpStatus } from '../types/common.types';
+import { AuthenticatedUser, UserRole, HttpStatus } from '@src/types';
 import { ErrorResponse, ErrorMessages } from '../helpers/index';
 
 /**
@@ -73,7 +73,7 @@ export const authenticate = async (
 
     // Verify token
     const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
-    
+
     // Attach user to request
     authReq.user = {
       userId: decoded.userId,
@@ -156,7 +156,7 @@ export const optionalAuth = async (
     } catch (err) {
       // Silently fail for optional auth
     }
-    
+
     next();
   } catch (error) {
     // Silently fail for optional auth

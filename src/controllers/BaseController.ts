@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Document } from 'mongoose';
 import { BaseService } from '@services/BaseService';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
-import { BaseQueryOptions } from '../types/repository.types';
+import { BaseQueryOptions } from '@src/types';
 
 /**
  * Generic Base Controller class

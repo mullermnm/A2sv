@@ -1,7 +1,6 @@
 import { BaseRepository } from './BaseRepository';
 import Product, { IProduct } from '@models/product.model';
-import { FindAllResult, FindResult } from '../types/repository.types';
-import { HttpStatus } from '../types/common.types';
+import { FindAllResult, FindResult, HttpStatus } from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 import { FilterQuery } from 'mongoose';
 

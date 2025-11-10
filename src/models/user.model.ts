@@ -1,5 +1,5 @@
 import { Schema, model, Document } from 'mongoose';
-import { UserRole } from '../types/common.types';
+import { UserRole } from '@src/types';
 
 /**
  * User Document Interface

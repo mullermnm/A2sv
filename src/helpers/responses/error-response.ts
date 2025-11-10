@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { ApiResponse, HttpStatus } from '../../types/common.types';
+import { ApiResponse, HttpStatus } from '@src/types';
 import { ErrorMessages, getErrorStatusMessage } from '../messages/error-messages';
 
 /**

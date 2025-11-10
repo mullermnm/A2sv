@@ -7,6 +7,16 @@ import { IOrder } from '../models/order.model';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
+interface OrderProductItem {
+  productId: string;
+  quantity: number;
+}
+
+interface PlaceOrderBody {
+  products: OrderProductItem[];
+  description?: string;
+}
+
 /**
  * Order Controller
  * Handles HTTP requests for order management
@@ -18,7 +28,7 @@ export class OrderController extends BaseController<IOrder> {
     const orderRepository = new OrderRepository();
     const productRepository = new ProductRepository();
     const orderService = new OrderService(orderRepository, productRepository);
-    
+
     super(orderService);
     this.orderService = orderService;
   }
@@ -32,14 +42,14 @@ export class OrderController extends BaseController<IOrder> {
   async placeOrder(req: Request, res: Response): Promise<Response | void> {
     try {
       const authReq = req as AuthRequest;
-      
+
       // Check authentication
       if (!authReq.user || !authReq.user.userId) {
         return ErrorResponse.send(res, 'Unauthorized', 401);
       }
 
       const userId = authReq.user.userId;
-      const orderData = req.body;
+      const orderData = req.body as PlaceOrderBody;
 
       // Validate request body
       if (!orderData.products || !Array.isArray(orderData.products)) {
@@ -53,13 +63,8 @@ export class OrderController extends BaseController<IOrder> {
       // Validate each product item
       for (const item of orderData.products) {
         if (!item.productId || !item.quantity) {
-          return ErrorResponse.send(
-            res,
-            'Each product must have productId and quantity',
-            400
-          );
+          return ErrorResponse.send(res, 'Each product must have productId and quantity', 400);
         }
-
         if (typeof item.quantity !== 'number' || item.quantity < 1) {
           return ErrorResponse.send(res, 'Quantity must be a number greater than 0', 400);
         }
@@ -88,14 +93,14 @@ export class OrderController extends BaseController<IOrder> {
   async getOrderHistory(req: Request, res: Response): Promise<Response | void> {
     try {
       const authReq = req as AuthRequest;
-      
+
       // Check authentication
       if (!authReq.user || !authReq.user.userId) {
         return ErrorResponse.send(res, 'Unauthorized', 401);
       }
 
       const userId = authReq.user.userId;
-      
+
       // Get pagination parameters
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -132,7 +137,7 @@ export class OrderController extends BaseController<IOrder> {
   async getOrderById(req: Request, res: Response): Promise<Response | void> {
     try {
       const authReq = req as AuthRequest;
-      
+
       // Check authentication
       if (!authReq.user || !authReq.user.userId) {
         return ErrorResponse.send(res, 'Unauthorized', 401);

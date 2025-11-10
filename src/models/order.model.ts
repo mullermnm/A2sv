@@ -1,5 +1,5 @@
+import { OrderStatus } from '@src/types';
 import { Schema, model, Document, Types } from 'mongoose';
-import { OrderStatus } from '../types/common.types';
 
 /**
  * Order Product Item Interface

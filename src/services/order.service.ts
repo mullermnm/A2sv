@@ -3,7 +3,7 @@ import { BaseService } from './BaseService';
 import { OrderRepository } from '../repositories/order.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { IOrder, IOrderProduct } from '../models/order.model';
-import { HttpStatus } from '../types/common.types';
+import { HttpStatus } from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 
 /**
@@ -145,7 +145,7 @@ export class OrderService extends BaseService<IOrder> {
     } catch (error) {
       // Transaction will auto-rollback on error
       console.error('Error in placeOrder:', error);
-      
+
       const errorMessage = error instanceof Error ? error.message : ErrorMessages.OPERATION_FAILED;
 
       // Determine appropriate status code based on error

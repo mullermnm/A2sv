@@ -1,7 +1,7 @@
 import { BaseService } from './BaseService';
 import { UserRepository } from '@repositories/user.repository';
 import { IUser } from '@models/user.model';
-import { HttpStatus, UserRole } from '../types/common.types';
+import { HttpStatus, UserRole, LoginRequest, RegisterRequest } from '@src/types';
 import { ErrorMessages } from '@helpers/index';
 
 /**
@@ -19,7 +19,7 @@ export class UserService extends BaseService<IUser> {
   /**
    * Register a new user
    */
-  async register(userData: { username: string; email: string; password: string; role?: string }) {
+  async register(userData: RegisterRequest) {
     try {
       // Check if user already exists
       const exists = await this.userRepository.existsByEmailOrUsername(
@@ -75,7 +75,7 @@ export class UserService extends BaseService<IUser> {
   /**
    * Login user
    */
-  async login(credentials: { email: string; password: string }) {
+  async login(credentials: LoginRequest) {
     try {
       // Find user by email (with password)
       const result = await this.userRepository.findByEmail(credentials.email, true);

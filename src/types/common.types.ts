@@ -63,39 +63,16 @@ export interface SearchQuery extends QueryOptions {
   [key: string]: unknown;
 }
 
-/**
- * User roles enum
- */
-export enum UserRole {
-  USER = 'user',
-  ADMIN = 'admin',
-}
 
-/**
- * Order status enum
- */
-export enum OrderStatus {
-  PENDING = 'pending',
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
-}
+
+
 
 /**
  * Generic Mongoose Document type
  */
 export type MongooseDoc<T> = Document<unknown, object, T> & T;
 
-/**
- * Request with authenticated user
- */
-export interface AuthenticatedUser {
-  userId: string;
-  username: string;
-  email: string;
-  role: UserRole;
-}
+
 
 /**
  * HTTP Status codes

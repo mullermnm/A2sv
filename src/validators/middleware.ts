@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { Request, Response, NextFunction } from 'express';
 import { ErrorResponse } from '@helpers/index';
-import { HttpStatus } from '../types/common.types';
+import { HttpStatus } from '@src/types';
 
 /**
  * Joi Validation Middleware Factory

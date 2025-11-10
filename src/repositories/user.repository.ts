@@ -2,8 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { BaseRepository } from './BaseRepository';
 import User, { IUser } from '@models/user.model';
-import { CreateResult, FindResult } from '../types/repository.types';
-import { HttpStatus } from '../types/common.types';
+import { CreateResult, FindResult, HttpStatus } from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 
 /**
@@ -150,7 +149,7 @@ export class UserRepository extends BaseRepository<IUser> {
     if (!secret) {
       throw new Error('JWT_SECRET is not defined in environment variables');
     }
-    
+
     return jwt.sign(payload, secret, {
       expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any,
     });

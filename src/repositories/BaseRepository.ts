@@ -15,8 +15,8 @@ import {
   DeleteResult,
   BaseQueryOptions,
   IBaseRepository,
-} from '../types/repository.types';
-import { HttpStatus } from '../types/common.types';
+  HttpStatus
+} from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 
 /**
