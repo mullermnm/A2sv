@@ -23,8 +23,22 @@ router.post(
 );
 
 /**
+ * @route   GET /api/orders/my-orders
+ * @desc    Get authenticated user's own orders (simple endpoint)
+ * @access  Private
+ * @query   page, limit (optional pagination)
+ * @rateLimit 100 requests per 15 minutes per IP
+ */
+router.get(
+  '/my-orders',
+  apiLimiter,
+  authenticate,
+  asyncHandler(orderController.getMyOrders.bind(orderController))
+);
+
+/**
  * @route   GET /api/orders
- * @desc    Get order history for authenticated user
+ * @desc    Get order history for authenticated user with filters
  * @access  Private
  * @rateLimit 100 requests per 15 minutes per IP
  */

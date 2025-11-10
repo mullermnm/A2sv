@@ -135,6 +135,51 @@ export class OrderController extends BaseController<IOrder> {
   }
 
   /**
+   * Get user's own orders (simple endpoint)
+   * GET /api/orders/my-orders
+   * @access Private (Authenticated users)
+   * Uses req.user.userId from auth middleware
+   * Accepts query parameters for pagination
+   */
+  async getMyOrders(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      // Check authentication
+      if (!req.user || !req.user.userId) {
+        return ErrorResponse.send(res, 'Unauthorized', 401);
+      }
+
+      const userId = req.user.userId;
+
+      // Get pagination parameters from query
+      const page = parseInt((req.query.page as string) || '1', 10);
+      const limit = parseInt((req.query.limit as string) || '10', 10);
+
+      // Call repository's findAll directly through service
+      const orderRepo = this.service['repository'] as OrderRepository;
+      const result = await orderRepo.findOrdersByUser(userId, page, limit);
+
+      if (!result.success) {
+        return ErrorResponse.send(res, result.message, result.statusCode);
+      }
+
+      return SuccessResponse.paginated(
+        res,
+        result.data,
+        {
+          pageNumber: result.page,
+          pageSize: result.limit,
+          totalPages: result.totalPages,
+          totalSize: result.totalItems,
+        },
+        'Orders retrieved successfully'
+      );
+    } catch (error) {
+      console.error('Error in getMyOrders controller:', error);
+      return ErrorResponse.send(res, 'Internal server error', 500);
+    }
+  }
+
+  /**
    * Get order history for authenticated user with filtering
    * GET /api/orders
    * @access Private (Authenticated users)
