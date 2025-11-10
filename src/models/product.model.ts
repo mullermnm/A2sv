@@ -71,13 +71,13 @@ const ProductSchema = new Schema<IProduct>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret: any) => {
+      transform: (_doc: unknown, ret: Record<string, unknown>) => {
         delete ret.__v;
         return ret;
       },
     },
     toObject: {
-      transform: (_doc, ret: any) => {
+      transform: (_doc: unknown, ret: Record<string, unknown>) => {
         delete ret.__v;
         return ret;
       },
@@ -110,6 +110,7 @@ ProductSchema.virtual('isAvailable').get(function () {
  * Static method: Find products by category
  */
 ProductSchema.statics.findByCategory = function (category: string) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   return this.find({ category: category.toLowerCase() }).sort({ createdAt: -1 });
 };
 
@@ -117,6 +118,7 @@ ProductSchema.statics.findByCategory = function (category: string) {
  * Static method: Find products in stock
  */
 ProductSchema.statics.findInStock = function () {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   return this.find({ stock: { $gt: 0 } }).sort({ createdAt: -1 });
 };
 
@@ -126,6 +128,7 @@ ProductSchema.statics.findInStock = function () {
 ProductSchema.methods.reduceStock = async function (quantity: number): Promise<boolean> {
   if (this.stock >= quantity) {
     this.stock -= quantity;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await this.save();
     return true;
   }
@@ -135,9 +138,11 @@ ProductSchema.methods.reduceStock = async function (quantity: number): Promise<b
 /**
  * Instance method: Increase stock
  */
-ProductSchema.methods.increaseStock = async function (quantity: number): Promise<void> {
+ProductSchema.methods.increaseStock = async function (quantity: number): Promise<boolean> {
   this.stock += quantity;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   await this.save();
+  return true;
 };
 
 /**

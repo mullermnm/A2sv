@@ -17,7 +17,7 @@ export class ProductRepository extends BaseRepository<IProduct> {
    * Find product by ID with detailed information
    * User Story 7
    */
-  
+
   /**
    * Find products by category - uses base findAll
    */

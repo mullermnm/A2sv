@@ -106,15 +106,9 @@ const saveFileToBodyAsync = (
   return Promise.resolve().then(() => {
     try {
       if (req.file) {
-        req.body = {
-          [fieldname]: req.file as unknown,
-          ...req.body,
-        } as typeof req.body;
+        Object.assign(req.body, { [fieldname]: req.file });
       } else if (req.files && Array.isArray(req.files) && req.files.length) {
-        req.body = {
-          [fieldname]: req.files as unknown,
-          ...req.body,
-        } as typeof req.body;
+        Object.assign(req.body, { [fieldname]: req.files });
       }
       console.log(req.body);
       return {

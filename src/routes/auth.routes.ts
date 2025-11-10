@@ -13,7 +13,12 @@ const router = Router();
  * @validation Joi schema validates: username (alphanumeric), email (valid format), password (8+ chars, uppercase, lowercase, number, special char)
  * @rateLimit 5 requests per 15 minutes per IP
  */
-router.post('/register', authLimiter, validate(registerSchema), userController.register);
+router.post(
+  '/register',
+  authLimiter,
+  validate(registerSchema),
+  userController.register.bind(userController)
+);
 
 /**
  * @route   POST /api/auth/login
@@ -22,6 +27,11 @@ router.post('/register', authLimiter, validate(registerSchema), userController.r
  * @validation Joi schema validates: email (valid format), password (required)
  * @rateLimit 5 requests per 15 minutes per IP
  */
-router.post('/login', authLimiter, validate(loginSchema), userController.login);
+router.post(
+  '/login',
+  authLimiter,
+  validate(loginSchema),
+  userController.login.bind(userController)
+);
 
 export default router;

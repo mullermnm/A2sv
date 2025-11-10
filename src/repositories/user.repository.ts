@@ -31,12 +31,13 @@ export class UserRepository extends BaseRepository<IUser> {
 
       // Call parent create method using super
       return await super.create(userData);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error in UserRepository.create:', error);
 
       // Handle duplicate key error (unique constraint violation)
-      if (error.code === 11000) {
-        const field = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'Field';
+      const err = error as { code?: number; keyPattern?: Record<string, unknown> };
+      if (err.code === 11000) {
+        const field = err.keyPattern ? Object.keys(err.keyPattern)[0] : 'Field';
         const fieldName = field || 'Field';
         return {
           success: false,
@@ -58,7 +59,7 @@ export class UserRepository extends BaseRepository<IUser> {
    */
   async findByEmail(email: string, includePassword = false): Promise<FindResult<IUser>> {
     try {
-      let query = this.model.findOne({ email });
+      let query: ReturnType<typeof this.model.findOne> = this.model.findOne({ email });
 
       // Include password field if needed (for login)
       if (includePassword) {
@@ -77,7 +78,7 @@ export class UserRepository extends BaseRepository<IUser> {
 
       return {
         success: true,
-        data: user,
+        data: user as IUser,
         statusCode: HttpStatus.OK,
         message: SuccessMessages.DATA_RETRIEVED,
       };
@@ -150,8 +151,9 @@ export class UserRepository extends BaseRepository<IUser> {
       throw new Error('JWT_SECRET is not defined in environment variables');
     }
 
+    // @ts-expect-error - jwt.sign types are incompatible but runtime works correctly
     return jwt.sign(payload, secret, {
-      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any,
+      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     });
   }
 
