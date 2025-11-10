@@ -1,8 +1,8 @@
 import { BaseService } from './BaseService';
 import { UserRepository } from '@repositories/user.repository';
 import { IUser } from '@models/user.model';
-import { HttpStatus, UserRole, LoginRequest, RegisterRequest } from '@src/types';
-import { ErrorMessages } from '@helpers/index';
+import { UserRole, LoginRequest, RegisterRequest } from '@src/types';
+import { ErrorMessages, ErrorResponse, SuccessResponse } from '@helpers/index';
 
 /**
  * User Service
@@ -22,17 +22,10 @@ export class UserService extends BaseService<IUser> {
   async register(userData: RegisterRequest) {
     try {
       // Check if user already exists
-      const exists = await this.userRepository.existsByEmailOrUsername(
-        userData.email,
-        userData.username
-      );
+      const exists = await this.userRepository.checkUserExists(userData.email, userData.username);
 
-      if (exists) {
-        return {
-          success: false,
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Email or username already exists',
-        };
+      if (exists.success) {
+        return ErrorResponse.createBadRequest('Email or username already exists');
       }
 
       // Create user (password will be hashed in repository)
@@ -53,22 +46,16 @@ export class UserService extends BaseService<IUser> {
       const userResponse = result.data.toObject() as Omit<typeof result.data, 'password'>;
       delete (userResponse as { password?: string }).password;
 
-      return {
-        success: true,
-        statusCode: HttpStatus.CREATED,
-        message: 'User registered successfully',
-        data: {
+      return SuccessResponse.createCreated(
+        {
           user: userResponse as Record<string, unknown>,
           token,
         },
-      };
+        'User registered successfully'
+      );
     } catch (error) {
       console.error('Error in UserService.register:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 
@@ -81,11 +68,7 @@ export class UserService extends BaseService<IUser> {
       const result = await this.userRepository.findByEmail(credentials.email, true);
 
       if (!result.success || !result.data) {
-        return {
-          success: false,
-          statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Invalid email or password',
-        };
+        return ErrorResponse.createUnauthorized('Invalid email or password');
       }
 
       // Compare passwords
@@ -95,11 +78,7 @@ export class UserService extends BaseService<IUser> {
       );
 
       if (!isPasswordValid) {
-        return {
-          success: false,
-          statusCode: HttpStatus.UNAUTHORIZED,
-          message: 'Invalid email or password',
-        };
+        return ErrorResponse.createUnauthorized('Invalid email or password');
       }
 
       // Generate token
@@ -109,22 +88,16 @@ export class UserService extends BaseService<IUser> {
       const userResponse = result.data.toObject() as Omit<typeof result.data, 'password'>;
       delete (userResponse as { password?: string }).password;
 
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: 'Login successful',
-        data: {
+      return SuccessResponse.createOk(
+        {
           user: userResponse as Record<string, unknown>,
           token,
         },
-      };
+        'Login successful'
+      );
     } catch (error) {
       console.error('Error in UserService.login:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 
@@ -139,19 +112,10 @@ export class UserService extends BaseService<IUser> {
         return result;
       }
 
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: 'User retrieved successfully',
-        data: result.data,
-      };
+      return SuccessResponse.createOk(result.data, 'User retrieved successfully');
     } catch (error) {
       console.error('Error in UserService.getUserById:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 }

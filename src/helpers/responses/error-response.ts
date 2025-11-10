@@ -60,9 +60,20 @@ export const sendBadRequest = (res: Response, message?: string, errors?: string[
 };
 
 /**
+ * Error result object (for services/repositories)
+ */
+export interface ErrorResult {
+  success: false;
+  statusCode: number;
+  message: string;
+  errors?: string[] | null;
+}
+
+/**
  * Error Response Helper Class
  */
 export class ErrorResponse {
+  // Methods that send HTTP responses (for controllers)
   static send(
     res: Response,
     message?: string,
@@ -90,5 +101,82 @@ export class ErrorResponse {
 
   static badRequest(res: Response, message?: string, errors?: string[]): Response {
     return sendBadRequest(res, message, errors);
+  }
+
+  // Factory methods that create error objects (for services/repositories)
+  static create(
+    message?: string,
+    statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR,
+    errors?: string[]
+  ): ErrorResult {
+    return {
+      success: false,
+      statusCode,
+      message: message || getErrorStatusMessage(statusCode),
+      errors: errors || null,
+    };
+  }
+
+  static createNotFound(message?: string): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.NOT_FOUND,
+      message: message || ErrorMessages.NOT_FOUND,
+      errors: null,
+    };
+  }
+
+  static createUnauthorized(message?: string): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.UNAUTHORIZED,
+      message: message || ErrorMessages.UNAUTHORIZED,
+      errors: null,
+    };
+  }
+
+  static createForbidden(message?: string): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.FORBIDDEN,
+      message: message || ErrorMessages.FORBIDDEN,
+      errors: null,
+    };
+  }
+
+  static createBadRequest(message?: string, errors?: string[]): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.BAD_REQUEST,
+      message: message || ErrorMessages.BAD_REQUEST,
+      errors: errors || null,
+    };
+  }
+
+  static createValidationError(errors: string[], message?: string): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.BAD_REQUEST,
+      message: message || ErrorMessages.VALIDATION_FAILED,
+      errors,
+    };
+  }
+
+  static createConflict(message?: string): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.CONFLICT,
+      message: message || getErrorStatusMessage(HttpStatus.CONFLICT),
+      errors: null,
+    };
+  }
+
+  static createInternalError(message?: string): ErrorResult {
+    return {
+      success: false,
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: message || ErrorMessages.INTERNAL_ERROR,
+      errors: null,
+    };
   }
 }

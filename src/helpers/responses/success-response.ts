@@ -58,9 +58,20 @@ export const sendCreated = <T>(res: Response, data?: T, message?: string): Respo
 };
 
 /**
+ * Success result object (for services/repositories)
+ */
+export interface SuccessResult<T = unknown> {
+  success: true;
+  statusCode: number;
+  message: string;
+  data?: T;
+}
+
+/**
  * Success Response Helper Class
  */
 export class SuccessResponse {
+  // Methods that send HTTP responses (for controllers)
   static send<T>(
     res: Response,
     data?: T,
@@ -86,5 +97,37 @@ export class SuccessResponse {
     message?: string
   ): Response {
     return sendPaginatedSuccess(res, data, pagination, message);
+  }
+
+  // Factory methods that create success objects (for services/repositories)
+  static create<T>(
+    data?: T,
+    message?: string,
+    statusCode: number = HttpStatus.OK
+  ): SuccessResult<T> {
+    return {
+      success: true,
+      statusCode,
+      message: message || getSuccessStatusMessage(statusCode),
+      data,
+    };
+  }
+
+  static createOk<T>(data?: T, message?: string): SuccessResult<T> {
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: message || SuccessMessages.OPERATION_SUCCESS,
+      data,
+    };
+  }
+
+  static createCreated<T>(data?: T, message?: string): SuccessResult<T> {
+    return {
+      success: true,
+      statusCode: HttpStatus.CREATED,
+      message: message || SuccessMessages.DATA_CREATED,
+      data,
+    };
   }
 }

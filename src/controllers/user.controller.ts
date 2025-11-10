@@ -4,6 +4,7 @@ import { UserService } from '@services/user.service';
 import { IUser } from '@models/user.model';
 import { SuccessResponse, ErrorResponse } from '@helpers/index';
 import userRepository from '@repositories/user.repository';
+import { RegisterRequest } from '@src/types';
 
 /**
  * User Controller
@@ -27,12 +28,7 @@ export class UserController extends BaseController<IUser> {
    */
   async register(req: Request, res: Response): Promise<Response | void> {
     try {
-      const { username, email, password, role } = req.body as {
-        username: string;
-        email: string;
-        password: string;
-        role?: string;
-      };
+      const { username, email, password, role } = req.body as RegisterRequest;
       const result = await this.userService.register({
         username,
         email,

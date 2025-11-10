@@ -3,8 +3,8 @@ import { BaseService } from './BaseService';
 import { OrderRepository } from '../repositories/order.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { IOrder, IOrderProduct } from '../models/order.model';
-import { HttpStatus, CreateResult, PlaceOrderRequest } from '@src/types';
-import { ErrorMessages, SuccessMessages } from '@helpers/index';
+import { CreateResult, PlaceOrderRequest, HttpStatus } from '@src/types';
+import { ErrorMessages, SuccessMessages, ErrorResponse, SuccessResponse } from '@helpers/index';
 
 /**
  * Order Service
@@ -34,20 +34,12 @@ export class OrderService extends BaseService<IOrder> {
     try {
       // Validate userId
       if (!Types.ObjectId.isValid(userId)) {
-        return {
-          success: false,
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: ErrorMessages.INVALID_ID,
-        };
+        return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
       // Validate order data
       if (!orderData.products || orderData.products.length === 0) {
-        return {
-          success: false,
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'Order must contain at least one product',
-        };
+        return ErrorResponse.createBadRequest('Order must contain at least one product');
       }
 
       let orderResult: CreateResult<IOrder> | undefined;
@@ -125,12 +117,7 @@ export class OrderService extends BaseService<IOrder> {
       });
 
       // Transaction succeeded
-      return {
-        success: true,
-        statusCode: HttpStatus.CREATED,
-        message: SuccessMessages.OPERATION_SUCCESS,
-        data: orderResult?.data,
-      };
+      return SuccessResponse.createCreated(orderResult?.data, SuccessMessages.OPERATION_SUCCESS);
     } catch (error) {
       // Transaction will auto-rollback on error
       console.error('Error in placeOrder:', error);
@@ -149,11 +136,7 @@ export class OrderService extends BaseService<IOrder> {
         statusCode = HttpStatus.BAD_REQUEST;
       }
 
-      return {
-        success: false,
-        statusCode,
-        message: errorMessage,
-      };
+      return ErrorResponse.create(errorMessage, statusCode);
     } finally {
       // Always end the session
       await session.endSession();
@@ -170,16 +153,7 @@ export class OrderService extends BaseService<IOrder> {
     try {
       // Validate userId
       if (!Types.ObjectId.isValid(userId)) {
-        return {
-          success: false,
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: ErrorMessages.INVALID_ID,
-          data: [],
-          page,
-          limit,
-          totalPages: 0,
-          totalItems: 0,
-        };
+        return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
       const orderRepo = this.repository as OrderRepository;
@@ -188,16 +162,7 @@ export class OrderService extends BaseService<IOrder> {
       return result;
     } catch (error) {
       console.error('Error in getUserOrders:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-        data: [],
-        page,
-        limit,
-        totalPages: 0,
-        totalItems: 0,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 
@@ -222,16 +187,7 @@ export class OrderService extends BaseService<IOrder> {
       });
     } catch (error) {
       console.error('Error in getUserOrdersWithFilters:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-        data: [],
-        page,
-        limit,
-        totalPages: 0,
-        totalItems: 0,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 
@@ -243,11 +199,7 @@ export class OrderService extends BaseService<IOrder> {
     try {
       // Validate IDs
       if (!Types.ObjectId.isValid(orderId) || !Types.ObjectId.isValid(userId)) {
-        return {
-          success: false,
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: ErrorMessages.INVALID_ID,
-        };
+        return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
       const orderRepo = this.repository as OrderRepository;
@@ -256,11 +208,7 @@ export class OrderService extends BaseService<IOrder> {
       return result;
     } catch (error) {
       console.error('Error in getOrderById:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 }

@@ -1,7 +1,6 @@
 import { ProductRepository } from '@repositories/product.repository';
 import { IProduct } from '@models/product.model';
-import { HttpStatus } from '@src/types';
-import { ErrorMessages } from '@helpers/index';
+import { ErrorMessages, ErrorResponse, SuccessResponse } from '@helpers/index';
 import { Types } from 'mongoose';
 import { BaseService } from './BaseService';
 
@@ -35,19 +34,10 @@ export class ProductService extends BaseService<IProduct> {
         return result;
       }
 
-      return {
-        success: true,
-        statusCode: HttpStatus.CREATED,
-        message: 'Product created successfully',
-        data: result.data,
-      };
+      return SuccessResponse.createCreated(result.data, 'Product created successfully');
     } catch (error) {
       console.error('Error in createProduct:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.INTERNAL_ERROR,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.INTERNAL_ERROR);
     }
   }
 
@@ -61,11 +51,7 @@ export class ProductService extends BaseService<IProduct> {
       const existingProduct = await this.productRepository.findById(productId);
 
       if (!existingProduct.success || !existingProduct.data) {
-        return {
-          success: false,
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Product not found',
-        };
+        return ErrorResponse.createNotFound('Product not found');
       }
 
       // Update the product
@@ -75,19 +61,10 @@ export class ProductService extends BaseService<IProduct> {
         return result;
       }
 
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: 'Product updated successfully',
-        data: result.data,
-      };
+      return SuccessResponse.createOk(result.data, 'Product updated successfully');
     } catch (error) {
       console.error('Error in updateProduct:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.INTERNAL_ERROR,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.INTERNAL_ERROR);
     }
   }
 
@@ -109,25 +86,21 @@ export class ProductService extends BaseService<IProduct> {
         return result;
       }
 
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: search
+      return SuccessResponse.createOk(
+        {
+          data: result.data,
+          currentPage: result.page,
+          pageSize: result.limit,
+          totalPages: result.totalPages,
+          totalProducts: result.totalItems,
+        },
+        search
           ? `Found ${result.totalItems} products matching "${search}"`
-          : 'Products retrieved successfully',
-        data: result.data,
-        currentPage: result.page,
-        pageSize: result.limit,
-        totalPages: result.totalPages,
-        totalProducts: result.totalItems,
-      };
+          : 'Products retrieved successfully'
+      );
     } catch (error) {
       console.error('Error in getProducts:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.INTERNAL_ERROR,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.INTERNAL_ERROR);
     }
   }
 
@@ -144,11 +117,7 @@ export class ProductService extends BaseService<IProduct> {
       return result;
     } catch (error) {
       console.error('Error in getProductById:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.INTERNAL_ERROR,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.INTERNAL_ERROR);
     }
   }
 
@@ -162,11 +131,7 @@ export class ProductService extends BaseService<IProduct> {
       const existingProduct = await this.productRepository.findById(productId);
 
       if (!existingProduct.success || !existingProduct.data) {
-        return {
-          success: false,
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Product not found',
-        };
+        return ErrorResponse.createNotFound('Product not found');
       }
 
       const result = await this.productRepository.deleteById(productId);
@@ -175,18 +140,10 @@ export class ProductService extends BaseService<IProduct> {
         return result;
       }
 
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: 'Product deleted successfully',
-      };
+      return SuccessResponse.createOk(undefined, 'Product deleted successfully');
     } catch (error) {
       console.error('Error in deleteProduct:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.INTERNAL_ERROR,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.INTERNAL_ERROR);
     }
   }
 
@@ -197,19 +154,10 @@ export class ProductService extends BaseService<IProduct> {
     try {
       const result = await this.productRepository.findByCategory(category);
 
-      return {
-        success: result.success,
-        statusCode: result.statusCode,
-        message: result.message,
-        data: result.data,
-      };
+      return result;
     } catch (error) {
       console.error('Error in getProductsByCategory:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.INTERNAL_ERROR,
-      };
+      return ErrorResponse.createInternalError(ErrorMessages.INTERNAL_ERROR);
     }
   }
 }
