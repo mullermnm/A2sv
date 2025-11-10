@@ -50,15 +50,15 @@ export class UserService extends BaseService<IUser> {
       const token = this.userRepository.generateToken(result.data);
 
       // Return user without password
-      const userResponse = result.data.toObject();
-      delete userResponse.password;
+      const userResponse = result.data.toObject() as Omit<typeof result.data, 'password'>;
+      delete (userResponse as { password?: string }).password;
 
       return {
         success: true,
         statusCode: HttpStatus.CREATED,
         message: 'User registered successfully',
         data: {
-          user: userResponse,
+          user: userResponse as Record<string, unknown>,
           token,
         },
       };
@@ -106,15 +106,15 @@ export class UserService extends BaseService<IUser> {
       const token = this.userRepository.generateToken(result.data);
 
       // Return user without password
-      const userResponse = result.data.toObject();
-      delete userResponse.password;
+      const userResponse = result.data.toObject() as Omit<typeof result.data, 'password'>;
+      delete (userResponse as { password?: string }).password;
 
       return {
         success: true,
         statusCode: HttpStatus.OK,
         message: 'Login successful',
         data: {
-          user: userResponse,
+          user: userResponse as Record<string, unknown>,
           token,
         },
       };

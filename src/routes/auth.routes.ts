@@ -3,6 +3,7 @@ import userController from '@controllers/user.controller';
 import { validate } from '@validators/middleware';
 import { registerSchema, loginSchema } from '@validators/schemas/auth.validator';
 import { authLimiter } from '@middlewares/rateLimiter.middleware';
+import { asyncHandler } from '@helpers/asyncHandler';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.post(
   '/register',
   authLimiter,
   validate(registerSchema),
-  userController.register.bind(userController)
+  asyncHandler(userController.register.bind(userController))
 );
 
 /**
@@ -31,7 +32,7 @@ router.post(
   '/login',
   authLimiter,
   validate(loginSchema),
-  userController.login.bind(userController)
+  asyncHandler(userController.login.bind(userController))
 );
 
 export default router;

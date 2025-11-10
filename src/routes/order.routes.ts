@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '@middlewares/auth.middleware';
 import { OrderController } from '@controllers/order.controller';
 import { orderLimiter, apiLimiter } from '@middlewares/rateLimiter.middleware';
+import { asyncHandler } from '@helpers/asyncHandler';
 
 const router = Router();
 const orderController = new OrderController();
@@ -14,7 +15,12 @@ const orderController = new OrderController();
  * @note    Uses MongoDB transactions for stock updates
  * @rateLimit 10 requests per 10 minutes per IP
  */
-router.post('/', orderLimiter, authenticate, orderController.placeOrder.bind(orderController));
+router.post(
+  '/',
+  orderLimiter,
+  authenticate,
+  asyncHandler(orderController.placeOrder.bind(orderController))
+);
 
 /**
  * @route   GET /api/orders
@@ -22,7 +28,12 @@ router.post('/', orderLimiter, authenticate, orderController.placeOrder.bind(ord
  * @access  Private
  * @rateLimit 100 requests per 15 minutes per IP
  */
-router.get('/', apiLimiter, authenticate, orderController.getOrderHistory.bind(orderController));
+router.get(
+  '/',
+  apiLimiter,
+  authenticate,
+  asyncHandler(orderController.getOrderHistory.bind(orderController))
+);
 
 /**
  * @route   GET /api/orders/:id
@@ -30,6 +41,11 @@ router.get('/', apiLimiter, authenticate, orderController.getOrderHistory.bind(o
  * @access  Private
  * @rateLimit 100 requests per 15 minutes per IP
  */
-router.get('/:id', apiLimiter, authenticate, orderController.getOrderById.bind(orderController));
+router.get(
+  '/:id',
+  apiLimiter,
+  authenticate,
+  asyncHandler(orderController.getOrderById.bind(orderController))
+);
 
 export default router;

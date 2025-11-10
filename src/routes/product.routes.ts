@@ -4,6 +4,7 @@ import { validate } from '@validators/middleware';
 import { createProductSchema, updateProductSchema } from '@validators/schemas/product.validator';
 import productController from '@controllers/product.controller';
 import { apiLimiter, adminLimiter } from '@middlewares/rateLimiter.middleware';
+import { asyncHandler } from '@helpers/asyncHandler';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ const router = Router();
  * @query   page, limit/pageSize, search (optional)
  * @rateLimit 100 requests per 15 minutes per IP
  */
-router.get('/', apiLimiter, productController.getAll);
+router.get('/', apiLimiter, asyncHandler(productController.getAll.bind(productController)));
 
 /**
  * @route   GET /api/products/:id
@@ -22,7 +23,7 @@ router.get('/', apiLimiter, productController.getAll);
  * @access  Public
  * @rateLimit 100 requests per 15 minutes per IP
  */
-router.get('/:id', apiLimiter, productController.getById);
+router.get('/:id', apiLimiter, asyncHandler(productController.getById.bind(productController)));
 
 /**
  * @route   POST /api/products
@@ -37,7 +38,7 @@ router.post(
   authenticate,
   adminOnly,
   validate(createProductSchema),
-  productController.create
+  asyncHandler(productController.create.bind(productController))
 );
 
 /**
@@ -53,7 +54,7 @@ router.put(
   authenticate,
   adminOnly,
   validate(updateProductSchema),
-  productController.update
+  asyncHandler(productController.update.bind(productController))
 );
 
 /**
@@ -62,6 +63,12 @@ router.put(
  * @access  Private/Admin
  * @rateLimit 20 requests per 5 minutes per IP
  */
-router.delete('/:id', adminLimiter, authenticate, adminOnly, productController.delete);
+router.delete(
+  '/:id',
+  adminLimiter,
+  authenticate,
+  adminOnly,
+  asyncHandler(productController.delete.bind(productController))
+);
 
 export default router;

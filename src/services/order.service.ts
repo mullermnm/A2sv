@@ -3,7 +3,7 @@ import { BaseService } from './BaseService';
 import { OrderRepository } from '../repositories/order.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { IOrder, IOrderProduct } from '../models/order.model';
-import { HttpStatus } from '@src/types';
+import { HttpStatus, CreateResult } from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
 
 /**
@@ -61,7 +61,7 @@ export class OrderService extends BaseService<IOrder> {
         };
       }
 
-      let orderResult: any;
+      let orderResult: CreateResult<IOrder> | undefined;
 
       // Execute within transaction
       await session.withTransaction(async () => {
@@ -140,7 +140,7 @@ export class OrderService extends BaseService<IOrder> {
         success: true,
         statusCode: HttpStatus.CREATED,
         message: SuccessMessages.OPERATION_SUCCESS,
-        data: orderResult && orderResult.data ? orderResult.data : undefined,
+        data: orderResult?.data,
       };
     } catch (error) {
       // Transaction will auto-rollback on error
