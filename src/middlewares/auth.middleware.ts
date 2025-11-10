@@ -1,27 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../config/index';
-import { AuthenticatedUser, UserRole, HttpStatus } from '@src/types';
+import { UserRole, HttpStatus, AuthRequest, JWTPayload } from '@src/types';
 import { ErrorResponse, ErrorMessages } from '../helpers/index';
-
-/**
- * Extend Express Request to include authenticated user
- */
-export interface AuthRequest extends Request {
-  user?: AuthenticatedUser;
-}
-
-/**
- * JWT Payload structure
- */
-interface JWTPayload {
-  userId: string;
-  username: string;
-  email: string;
-  role: UserRole;
-  iat?: number;
-  exp?: number;
-}
 
 /**
  * Authentication Middleware

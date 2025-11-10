@@ -4,7 +4,7 @@ import { ProductService } from '@services/product.service';
 import { IProduct } from '@models/product.model';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
 import productRepository from '@repositories/product.repository';
-import { AuthRequest } from '@middlewares/auth.middleware';
+import { AuthRequest } from '@src/types';
 
 /**
  * Product Controller

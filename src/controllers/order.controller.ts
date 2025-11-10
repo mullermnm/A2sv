@@ -1,21 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { BaseController } from './BaseController';
 import { OrderService } from '../services/order.service';
 import { OrderRepository } from '../repositories/order.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { IOrder } from '../models/order.model';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
-import { AuthRequest } from '../middlewares/auth.middleware';
-
-interface OrderProductItem {
-  productId: string;
-  quantity: number;
-}
-
-interface PlaceOrderBody {
-  products: OrderProductItem[];
-  description?: string;
-}
+import { AuthRequest, PlaceOrderBody } from '@src/types';
 
 /**
  * Order Controller
@@ -101,16 +91,14 @@ export class OrderController extends BaseController<IOrder> {
    * @access Private (Authenticated users)
    * User Story 9: Place Order
    */
-  async placeOrder(req: Request, res: Response): Promise<Response | void> {
+  async placeOrder(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      const authReq = req as AuthRequest;
-
       // Check authentication
-      if (!authReq.user || !authReq.user.userId) {
+      if (!req.user || !req.user.userId) {
         return ErrorResponse.send(res, 'Unauthorized', 401);
       }
 
-      const userId = authReq.user.userId;
+      const userId = req.user.userId;
       const orderData = req.body as PlaceOrderBody;
 
       // Validate request body
@@ -153,23 +141,21 @@ export class OrderController extends BaseController<IOrder> {
    * User Story 10: View Order History
    * Supports filtering by status, price range, and date range
    */
-  async getOrderHistory(req: Request, res: Response): Promise<Response | void> {
+  async getOrderHistory(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      const authReq = req as AuthRequest;
-
       // Check authentication
-      if (!authReq.user || !authReq.user.userId) {
+      if (!req.user || !req.user.userId) {
         return ErrorResponse.send(res, 'Unauthorized', 401);
       }
 
-      const userId = authReq.user.userId;
+      const userId = req.user.userId;
 
       // Get pagination parameters
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
+      const page = parseInt((req.query.page as string) || '1', 10);
+      const limit = parseInt((req.query.limit as string) || '10', 10);
 
       // Build filters from query parameters
-      const filters = this.buildFilter(req.query as Record<string, unknown>);
+      const filters = this.buildFilter(req.query);
 
       // Add userId filter for security (user can only see their own orders)
       filters.userId = userId;
@@ -203,16 +189,14 @@ export class OrderController extends BaseController<IOrder> {
    * GET /api/orders/:id
    * @access Private (Authenticated users - own orders only)
    */
-  async getOrderById(req: Request, res: Response): Promise<Response | void> {
+  async getOrderById(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      const authReq = req as AuthRequest;
-
       // Check authentication
-      if (!authReq.user || !authReq.user.userId) {
+      if (!req.user || !req.user.userId) {
         return ErrorResponse.send(res, 'Unauthorized', 401);
       }
 
-      const userId = authReq.user.userId;
+      const userId = req.user.userId;
       const orderId = req.params.id;
 
       if (!orderId) {

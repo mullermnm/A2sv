@@ -1,25 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-
-interface AppConfig {
-  name: string;
-  version: string;
-  description: string;
-}
-
-interface PaginationConfig {
-  defaultPage: number;
-  defaultPageSize: number;
-  maxPageSize: number;
-}
-
-interface Config {
-  app: AppConfig;
-  unprotected_routes: string[];
-  static_routes: string[];
-  static_file_routes: string[];
-  pagination: PaginationConfig;
-}
+import { Config } from '@src/types';
 
 // Load configuration from default.json
 const configPath = path.join(__dirname, 'default.json');

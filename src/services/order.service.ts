@@ -3,19 +3,8 @@ import { BaseService } from './BaseService';
 import { OrderRepository } from '../repositories/order.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { IOrder, IOrderProduct } from '../models/order.model';
-import { HttpStatus, CreateResult } from '@src/types';
+import { HttpStatus, CreateResult, PlaceOrderRequest } from '@src/types';
 import { ErrorMessages, SuccessMessages } from '@helpers/index';
-
-/**
- * Order placement request interface
- */
-export interface PlaceOrderRequest {
-  products: Array<{
-    productId: string;
-    quantity: number;
-  }>;
-  description?: string;
-}
 
 /**
  * Order Service
