@@ -63,16 +63,10 @@ export interface SearchQuery extends QueryOptions {
   [key: string]: unknown;
 }
 
-
-
-
-
 /**
  * Generic Mongoose Document type
  */
 export type MongooseDoc<T> = Document<unknown, object, T> & T;
-
-
 
 /**
  * HTTP Status codes

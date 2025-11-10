@@ -1,4 +1,4 @@
-import { FilterQuery, Model, UpdateQuery, PopulateOptions } from 'mongoose';
+import { FilterQuery, UpdateQuery, PopulateOptions } from 'mongoose';
 
 /**
  * Base repository query options

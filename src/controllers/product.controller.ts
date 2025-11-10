@@ -2,16 +2,105 @@ import { Request, Response, NextFunction } from 'express';
 import { ProductService } from '@services/product.service';
 import { SuccessResponse, ErrorResponse } from '@helpers/index';
 import productRepository from '@repositories/product.repository';
+import { IProduct } from '@models/product.model';
+import { BaseController } from './BaseController';
 
 /**
  * Product Controller
  * Handles HTTP requests for product operations
  */
-export class ProductController {
+export class ProductController extends BaseController<IProduct> {
   private productService: ProductService;
 
   constructor(productService: ProductService) {
+    super(productService);
     this.productService = productService;
+  }
+
+  /**
+   * Override buildFilter to add product search and advanced filtering
+   * Supports:
+   * - search: Name search (case-insensitive, partial match)
+   * - minPrice, maxPrice: Price range filtering
+   * - category: Category filtering
+   * - status: Status filtering (active/deleted)
+   * - minStock, maxStock: Stock range filtering
+   * - inStock: Boolean to filter products with stock > 0
+   */
+  protected buildFilter(
+    filters: Record<string, unknown>,
+    search?: string
+  ): Record<string, unknown> {
+    const filter: Record<string, unknown> = {};
+
+    // Add case-insensitive name search
+    if (search && search.trim() !== '') {
+      filter.name = { $regex: search.trim(), $options: 'i' };
+    }
+
+    // Price range filtering
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      filter.price = {};
+      if (filters.minPrice !== undefined) {
+        const minPrice = Number(filters.minPrice);
+        if (!isNaN(minPrice) && minPrice >= 0) {
+          (filter.price as Record<string, unknown>).$gte = minPrice;
+        }
+      }
+      if (filters.maxPrice !== undefined) {
+        const maxPrice = Number(filters.maxPrice);
+        if (!isNaN(maxPrice) && maxPrice >= 0) {
+          (filter.price as Record<string, unknown>).$lte = maxPrice;
+        }
+      }
+    }
+
+    // Category filtering (case-insensitive)
+    if (
+      filters.category &&
+      typeof filters.category === 'string' &&
+      filters.category.trim() !== ''
+    ) {
+      filter.category = filters.category.toLowerCase().trim();
+    }
+
+    // Status filtering (default to active only)
+    if (filters.status && typeof filters.status === 'string') {
+      const status = filters.status.toLowerCase();
+      if (status === 'active' || status === 'deleted') {
+        filter.status = status;
+      }
+    } else {
+      // Default: only show active products
+      filter.status = 'active';
+    }
+
+    // Stock range filtering
+    if (filters.minStock !== undefined || filters.maxStock !== undefined) {
+      filter.stock = {};
+      if (filters.minStock !== undefined) {
+        const minStock = Number(filters.minStock);
+        if (!isNaN(minStock) && minStock >= 0) {
+          (filter.stock as Record<string, unknown>).$gte = minStock;
+        }
+      }
+      if (filters.maxStock !== undefined) {
+        const maxStock = Number(filters.maxStock);
+        if (!isNaN(maxStock) && maxStock >= 0) {
+          (filter.stock as Record<string, unknown>).$lte = maxStock;
+        }
+      }
+    }
+
+    // In-stock filtering (products with stock > 0)
+    if (filters.inStock !== undefined) {
+      const inStock = filters.inStock === 'true' || filters.inStock === true;
+      if (inStock) {
+        filter.stock = { $gt: 0 };
+      }
+    }
+
+    return filter;
   }
 
   /**
@@ -64,39 +153,7 @@ export class ProductController {
     }
   };
 
-  /**
-   * Get list of products with pagination and search (User Stories 5 & 6)
-   * GET /api/products
-   * Public
-   */
-  list = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit =
-        parseInt(req.query.limit as string) || parseInt(req.query.pageSize as string) || 10;
-      const search = (req.query.search as string) || '';
-
-      const result = await this.productService.getProducts({ page, limit, search });
-
-      if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
-      }
-
-      // Return paginated response
-      return res.status(result.statusCode).json({
-        success: true,
-        message: result.message,
-        data: result.data,
-        currentPage: (result as any).currentPage,
-        pageSize: (result as any).pageSize,
-        totalPages: (result as any).totalPages,
-        totalProducts: (result as any).totalProducts,
-        errors: null,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
+  
 
   /**
    * Get product details by ID (User Story 7)

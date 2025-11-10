@@ -26,6 +26,7 @@ export class UserController extends BaseController<IUser> {
    * POST /api/auth/register
    */
   async register(req: Request, res: Response): Promise<Response | void> {
+    try {
     const { username, email, password, role } = req.body;
     const result = await this.userService.register({
         username,

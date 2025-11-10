@@ -13,7 +13,7 @@ import { HttpStatus } from '@src/types';
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): Response | void => {
     const { error, value } = schema.validate(req.body, {
-      abortEarly: false, // Return all errors, not just the first one
+      abortEarly: false, 
       stripUnknown: true, // Remove unknown fields from the validated data
     });
 

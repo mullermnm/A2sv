@@ -12,7 +12,7 @@ const router = Router();
  * @access  Public
  * @query   page, limit/pageSize, search (optional)
  */
-router.get('/', productController.list);
+router.get('/', productController.getAll);
 
 /**
  * @route   GET /api/products/:id

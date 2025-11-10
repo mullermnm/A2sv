@@ -31,6 +31,68 @@ export class OrderController extends BaseController<IOrder> {
 
     super(orderService);
     this.orderService = orderService;
+
+    // Bind custom methods to preserve 'this' context
+    this.placeOrder = this.placeOrder.bind(this);
+    this.getOrderHistory = this.getOrderHistory.bind(this);
+    this.getOrderById = this.getOrderById.bind(this);
+  }
+
+  /**
+   * Override buildFilter to add order filtering
+   * Supports:
+   * - status: Order status filtering (pending, processing, shipped, delivered, cancelled)
+   * - minPrice, maxPrice: Total price range filtering
+   * - startDate, endDate: Date range filtering
+   * Note: userId filtering is handled in custom methods for security
+   */
+  protected buildFilter(filters: Record<string, unknown>): Record<string, unknown> {
+    const filter: Record<string, unknown> = {};
+
+    // Status filtering (pending, processing, shipped, delivered, cancelled)
+    if (filters.status && typeof filters.status === 'string') {
+      const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+      const status = filters.status.toLowerCase();
+      if (validStatuses.includes(status)) {
+        filter.status = status;
+      }
+    }
+
+    // Total price range filtering
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+      filter.totalPrice = {};
+      if (filters.minPrice !== undefined) {
+        const minPrice = Number(filters.minPrice);
+        if (!isNaN(minPrice) && minPrice >= 0) {
+          (filter.totalPrice as Record<string, unknown>).$gte = minPrice;
+        }
+      }
+      if (filters.maxPrice !== undefined) {
+        const maxPrice = Number(filters.maxPrice);
+        if (!isNaN(maxPrice) && maxPrice >= 0) {
+          (filter.totalPrice as Record<string, unknown>).$lte = maxPrice;
+        }
+      }
+    }
+
+    // Date range filtering
+    if (filters.startDate !== undefined || filters.endDate !== undefined) {
+      filter.createdAt = {};
+      if (filters.startDate !== undefined) {
+        const startDate = new Date(filters.startDate as string);
+        if (!isNaN(startDate.getTime())) {
+          (filter.createdAt as Record<string, unknown>).$gte = startDate;
+        }
+      }
+      if (filters.endDate !== undefined) {
+        const endDate = new Date(filters.endDate as string);
+        if (!isNaN(endDate.getTime())) {
+          (filter.createdAt as Record<string, unknown>).$lte = endDate;
+        }
+      }
+    }
+
+    return filter;
   }
 
   /**
@@ -85,10 +147,11 @@ export class OrderController extends BaseController<IOrder> {
   }
 
   /**
-   * Get order history for authenticated user
+   * Get order history for authenticated user with filtering
    * GET /api/orders
    * @access Private (Authenticated users)
    * User Story 10: View Order History
+   * Supports filtering by status, price range, and date range
    */
   async getOrderHistory(req: Request, res: Response): Promise<Response | void> {
     try {
@@ -105,8 +168,14 @@ export class OrderController extends BaseController<IOrder> {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
 
-      // Get user's orders
-      const result = await this.orderService.getUserOrders(userId, page, limit);
+      // Build filters from query parameters
+      const filters = this.buildFilter(req.query as Record<string, unknown>);
+
+      // Add userId filter for security (user can only see their own orders)
+      filters.userId = userId;
+
+      // Get user's orders with filters
+      const result = await this.orderService.getUserOrdersWithFilters(filters, page, limit);
 
       if (!result.success) {
         return ErrorResponse.send(res, result.message, result.statusCode);

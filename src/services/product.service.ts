@@ -1,17 +1,19 @@
 import { ProductRepository } from '@repositories/product.repository';
 import { IProduct } from '@models/product.model';
 import { HttpStatus } from '@src/types';
-import { ErrorMessages, SuccessMessages } from '@helpers/index';
+import { ErrorMessages } from '@helpers/index';
 import { Types } from 'mongoose';
+import { BaseService } from './BaseService';
 
 /**
  * Product Service
  * Handles business logic for product operations
  */
-export class ProductService {
+export class ProductService extends BaseService<IProduct> {
   private productRepository: ProductRepository;
 
   constructor(productRepository: ProductRepository) {
+    super(productRepository);
     this.productRepository = productRepository;
   }
 
@@ -97,7 +99,7 @@ export class ProductService {
     try {
       const { page, limit, search } = query;
 
-      const result = await this.productRepository.findAllPaginated({
+      const result = await this.productRepository.findAll({
         page,
         limit: limit || 10,
         search,
@@ -135,22 +137,11 @@ export class ProductService {
    */
   async getProductById(productId: string) {
     try {
-      const result = await this.productRepository.findByIdDetailed(productId);
+      const result = await this.productRepository.findById(productId, {
+        populate: [{ path: 'userId', select: 'username email' }],
+      });
 
-      if (!result.success || !result.data) {
-        return {
-          success: false,
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Product not found',
-        };
-      }
-
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: SuccessMessages.DATA_RETRIEVED,
-        data: result.data,
-      };
+      return result;
     } catch (error) {
       console.error('Error in getProductById:', error);
       return {

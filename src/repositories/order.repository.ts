@@ -1,7 +1,7 @@
 import { ClientSession, Types } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
 import Order, { IOrder, IOrderProduct } from '../models/order.model';
-import { ErrorMessages, SuccessMessages } from '@helpers/index';
+import { ErrorMessages } from '@helpers/index';
 import { CreateResult, FindAllResult, HttpStatus, OrderStatus } from '@src/types';
 
 /**
@@ -46,6 +46,7 @@ export class OrderRepository extends BaseRepository<IOrder> {
 
   /**
    * Find all orders for a specific user with pagination
+   * Uses base findAll method
    */
   async findOrdersByUser(
     userId: string,
@@ -66,30 +67,15 @@ export class OrderRepository extends BaseRepository<IOrder> {
         };
       }
 
-      const skip = (page - 1) * limit;
-
-      // Get total count for pagination
-      const totalItems = await this.model.countDocuments({ userId: new Types.ObjectId(userId) });
-      const totalPages = Math.ceil(totalItems / limit);
-
-      // Get paginated results
-      const orders = await this.model
-        .find({ userId: new Types.ObjectId(userId) })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec();
-
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: SuccessMessages.DATA_RETRIEVED,
-        data: orders,
-        page,
-        limit,
-        totalPages,
-        totalItems,
-      };
+      // Use base findAll with userId filter
+      return this.findAll(
+        { userId: new Types.ObjectId(userId) },
+        {
+          page,
+          limit,
+          sort: '-createdAt',
+        }
+      );
     } catch (error) {
       console.error('Error in findOrdersByUser:', error);
       return {
@@ -107,6 +93,7 @@ export class OrderRepository extends BaseRepository<IOrder> {
 
   /**
    * Find order by ID and user (ensures user can only access their own orders)
+   * Uses base findOne method
    */
   async findOrderByIdAndUser(orderId: string, userId: string) {
     try {
@@ -118,25 +105,11 @@ export class OrderRepository extends BaseRepository<IOrder> {
         };
       }
 
-      const order = await this.model.findOne({
+      // Use base findOne with both orderId and userId filter
+      return this.findOne({
         _id: new Types.ObjectId(orderId),
         userId: new Types.ObjectId(userId),
       });
-
-      if (!order) {
-        return {
-          success: false,
-          statusCode: HttpStatus.NOT_FOUND,
-          message: ErrorMessages.NOT_FOUND,
-        };
-      }
-
-      return {
-        success: true,
-        statusCode: HttpStatus.OK,
-        message: SuccessMessages.DATA_RETRIEVED,
-        data: order,
-      };
     } catch (error) {
       console.error('Error in findOrderByIdAndUser:', error);
       return {

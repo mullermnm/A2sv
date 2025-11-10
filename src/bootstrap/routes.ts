@@ -41,7 +41,7 @@ router.get('/ping', (_req: Request, res: Response) => {
 /**
  * API Routes
  */
-router.use('/auth', authRoutes); // POST /api/auth/register, POST /api/auth/login
+router.use('/auth', authRoutes); // POST /api/v1/auth/register, POST /api/v1/auth/login
 router.use('/products', productRoutes);
 router.use('/orders', orderRoutes);
 

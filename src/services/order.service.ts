@@ -213,6 +213,40 @@ export class OrderService extends BaseService<IOrder> {
   }
 
   /**
+   * Get order history for a user with filters
+   * Supports filtering by status, price range, and date range
+   * - Returns only orders belonging to authenticated user
+   * - Supports pagination and filtering
+   */
+  async getUserOrdersWithFilters(
+    filters: Record<string, unknown>,
+    page: number = 1,
+    limit: number = 10
+  ) {
+    try {
+      // Use base repository's findAll with filters
+      const orderRepo = this.repository as OrderRepository;
+      return orderRepo.findAll(filters, {
+        page,
+        limit,
+        sort: '-createdAt',
+      });
+    } catch (error) {
+      console.error('Error in getUserOrdersWithFilters:', error);
+      return {
+        success: false,
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: ErrorMessages.OPERATION_FAILED,
+        data: [],
+        page,
+        limit,
+        totalPages: 0,
+        totalItems: 0,
+      };
+    }
+  }
+
+  /**
    * Get a single order by ID for a user
    * Ensures user can only access their own orders
    */
