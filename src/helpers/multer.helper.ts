@@ -85,10 +85,10 @@ const fileFilter = function (
 const saveFileToBody = (req: Request, fieldname: string): void => {
   if (req.file && req.file.fieldname === fieldname) {
     // Store the actual file path in the document field
-    req.body[fieldname] = req.file.path;
+    (req.body as Record<string, unknown>)[fieldname] = req.file.path;
     console.log('File saved to body:', {
       fieldname,
-      path: req.body[fieldname],
+      path: (req.body as Record<string, unknown>)[fieldname],
       file: req.file,
     });
   } else {
@@ -99,59 +99,63 @@ const saveFileToBody = (req: Request, fieldname: string): void => {
 /**
  * Save uploaded file(s) to request body asynchronously
  */
-const saveFileToBodyAsync = async (
+const saveFileToBodyAsync = (
   req: Request,
   fieldname: string
 ): Promise<{ error: boolean; message?: string }> => {
-  try {
-    if (req.file) {
-      req.body = {
-        [fieldname]: req.file,
-        ...req.body,
+  return Promise.resolve().then(() => {
+    try {
+      if (req.file) {
+        req.body = {
+          [fieldname]: req.file as unknown,
+          ...req.body,
+        } as typeof req.body;
+      } else if (req.files && Array.isArray(req.files) && req.files.length) {
+        req.body = {
+          [fieldname]: req.files as unknown,
+          ...req.body,
+        } as typeof req.body;
+      }
+      console.log(req.body);
+      return {
+        error: false,
       };
-    } else if (req.files && Array.isArray(req.files) && req.files.length) {
-      req.body = {
-        [fieldname]: req.files,
-        ...req.body,
+    } catch (err) {
+      return {
+        error: true,
+        message: (err as Error).message,
       };
     }
-    console.log(req.body);
-    return {
-      error: false,
-    };
-  } catch (err) {
-    return {
-      error: true,
-      message: (err as Error).message,
-    };
-  }
+  });
 };
 
 /**
  * Save multiple file fields to request body
  */
-const saveMultipleFieldsToBody = async (
+const saveMultipleFieldsToBody = (
   req: Request,
   _fields: { name: string; maxCount: number }[]
 ): Promise<{ error: boolean; message?: string }> => {
-  try {
-    if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
-      Object.keys(req.files).forEach((key) => {
-        const files = (req.files as { [fieldname: string]: Express.Multer.File[] })[key];
-        if (files) {
-          req.body[key] = files.length === 1 ? files[0] : files;
-        }
-      });
+  return Promise.resolve().then(() => {
+    try {
+      if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
+        Object.keys(req.files).forEach((key) => {
+          const files = (req.files as { [fieldname: string]: Express.Multer.File[] })[key];
+          if (files) {
+            (req.body as Record<string, unknown>)[key] = files.length === 1 ? files[0] : files;
+          }
+        });
+      }
+      return {
+        error: false,
+      };
+    } catch (err) {
+      return {
+        error: true,
+        message: (err as Error).message,
+      };
     }
-    return {
-      error: false,
-    };
-  } catch (err) {
-    return {
-      error: true,
-      message: (err as Error).message,
-    };
-  }
+  });
 };
 
 /**
@@ -186,18 +190,19 @@ export default function uploadFile(destination: string) {
      * File path will be saved to req.body[fieldname]
      */
     single: (fieldname: string) => {
-      return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const customNext = (err: any): void => {
+      return (req: Request, res: Response, next: NextFunction): void => {
+        const customNext = (err: unknown): void => {
           if (err) {
-            console.error('Multer error:', err);
-            res.status(400).json({ error: true, message: err.message });
+            const error = err as Error;
+            console.error('Multer error:', error);
+            res.status(400).json({ error: true, message: error.message });
             return;
           }
           saveFileToBody(req, fieldname);
           next();
         };
 
-        upload.single(fieldname)(req, res, customNext);
+        upload.single(fieldname)(req, res, customNext as NextFunction);
       };
     },
 
@@ -206,7 +211,7 @@ export default function uploadFile(destination: string) {
      * File paths will be saved to req.body[fieldname]
      */
     array: (fieldname: string, maxcount: number) => {
-      return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+      return (req: Request, res: Response, next: NextFunction): void => {
         const customNext = async () => {
           const { error } = await saveFileToBodyAsync(req, fieldname);
           if (!error) next();
@@ -230,20 +235,22 @@ export default function uploadFile(destination: string) {
      * ])
      */
     fields: (fields: { name: string; maxCount: number }[]) => {
-      return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const customNext = async (err: any): Promise<void> => {
+      return (req: Request, res: Response, next: NextFunction): void => {
+        const customNext = (err: unknown): void => {
           if (err) {
-            console.error('Multer error:', err);
-            res.status(400).json({ error: true, message: err.message });
+            const error = err as Error;
+            console.error('Multer error:', error);
+            res.status(400).json({ error: true, message: error.message });
             return;
           }
           console.log('Files after multer processing:', req.files);
-          const { error } = await saveMultipleFieldsToBody(req, fields);
-          console.info(error);
-          next();
+          void saveMultipleFieldsToBody(req, fields).then(({ error }) => {
+            console.info(error);
+            next();
+          });
         };
 
-        upload.fields(fields)(req, res, customNext);
+        upload.fields(fields)(req, res, customNext as NextFunction);
       };
     },
   };

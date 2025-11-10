@@ -88,13 +88,13 @@ const OrderSchema = new Schema<IOrder>(
   {
     timestamps: true,
     toJSON: {
-      transform: (_doc, ret: any) => {
+      transform: (_doc: unknown, ret: Record<string, unknown>) => {
         delete ret.__v;
         return ret;
       },
     },
     toObject: {
-      transform: (_doc, ret: any) => {
+      transform: (_doc: unknown, ret: Record<string, unknown>) => {
         delete ret.__v;
         return ret;
       },
@@ -143,6 +143,7 @@ OrderSchema.pre('save', function (next) {
  * Static method: Find orders by user
  */
 OrderSchema.statics.findByUser = function (userId: Types.ObjectId) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   return this.find({ userId }).sort({ createdAt: -1 });
 };
 
@@ -150,6 +151,7 @@ OrderSchema.statics.findByUser = function (userId: Types.ObjectId) {
  * Static method: Find orders by status
  */
 OrderSchema.statics.findByStatus = function (status: OrderStatus) {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   return this.find({ status }).sort({ createdAt: -1 });
 };
 
@@ -158,15 +160,17 @@ OrderSchema.statics.findByStatus = function (status: OrderStatus) {
  */
 OrderSchema.methods.updateStatus = async function (newStatus: OrderStatus): Promise<void> {
   this.status = newStatus;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   await this.save();
 };
 
 /**
  * Instance method: Cancel order
  */
-OrderSchema.methods.cancel = async function (): Promise<boolean> {
+OrderSchema.methods.cancel = async function (this: IOrder): Promise<boolean> {
   if (this.status === OrderStatus.PENDING || this.status === OrderStatus.PROCESSING) {
     this.status = OrderStatus.CANCELLED;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await this.save();
     return true;
   }

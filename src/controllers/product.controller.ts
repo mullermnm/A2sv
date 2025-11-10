@@ -76,29 +76,39 @@ export class ProductController extends BaseController<IProduct> {
       filter.status = 'active';
     }
 
-    // Stock range filtering
-    if (filters.minStock !== undefined || filters.maxStock !== undefined) {
-      filter.stock = {};
-      if (filters.minStock !== undefined) {
-        const minStock = Number(filters.minStock);
-        if (!isNaN(minStock) && minStock >= 0) {
-          (filter.stock as Record<string, unknown>).$gte = minStock;
-        }
+    // Stock filtering - handle minStock, maxStock, and inStock together
+    const stockFilter: Record<string, unknown> = {};
+    // Add min/max stock range
+    if (filters.minStock !== undefined) {
+      const minStock = Number(filters.minStock);
+      if (!isNaN(minStock) && minStock >= 0) {
+        stockFilter.$gte = minStock;
       }
-      if (filters.maxStock !== undefined) {
-        const maxStock = Number(filters.maxStock);
-        if (!isNaN(maxStock) && maxStock >= 0) {
-          (filter.stock as Record<string, unknown>).$lte = maxStock;
+    }
+    if (filters.maxStock !== undefined) {
+      const maxStock = Number(filters.maxStock);
+      if (!isNaN(maxStock) && maxStock >= 0) {
+        stockFilter.$lte = maxStock;
+      }
+    }
+
+    // Add in-stock filtering (overrides minStock if both present)
+    if (filters.inStock !== undefined) {
+      const inStock = filters.inStock === 'true' || filters.inStock === true;
+      if (inStock) {
+        // If we already have minStock, use the greater value
+        if (stockFilter.$gte !== undefined) {
+          stockFilter.$gt = Math.max(0, Number(stockFilter.$gte) - 1);
+          delete stockFilter.$gte;
+        } else {
+          stockFilter.$gt = 0;
         }
       }
     }
 
-    // In-stock filtering (products with stock > 0)
-    if (filters.inStock !== undefined) {
-      const inStock = filters.inStock === 'true' || filters.inStock === true;
-      if (inStock) {
-        filter.stock = { $gt: 0 };
-      }
+    // Apply stock filter if any conditions were set
+    if (Object.keys(stockFilter).length > 0) {
+      filter.stock = stockFilter;
     }
 
     return filter;

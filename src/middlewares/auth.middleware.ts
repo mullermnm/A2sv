@@ -28,11 +28,11 @@ interface JWTPayload {
  * Verifies JWT token and attaches user to request
  * Allows unprotected routes and static files to pass through
  */
-export const authenticate = async (
+export const authenticate = (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void | Response> => {
+): void | Response => {
   try {
     const authReq = req as AuthRequest;
 
@@ -122,11 +122,11 @@ export const adminOnly = authorize(UserRole.ADMIN);
  * Attaches user if token is present but doesn't require it
  * Useful for endpoints that work for both authenticated and unauthenticated users
  */
-export const optionalAuth = async (
+export const optionalAuth = (
   req: Request,
   _res: Response,
   next: NextFunction
-): Promise<void> => {
+): void => {
   try {
     const authReq = req as AuthRequest;
     const authHeader = req.header('Authorization');
