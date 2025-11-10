@@ -27,8 +27,13 @@ export class UserController extends BaseController<IUser> {
    */
   async register(req: Request, res: Response): Promise<Response | void> {
     try {
-    const { username, email, password, role } = req.body;
-    const result = await this.userService.register({
+      const { username, email, password, role } = req.body as {
+        username: string;
+        email: string;
+        password: string;
+        role?: string;
+      };
+      const result = await this.userService.register({
         username,
         email,
         password,
@@ -52,7 +57,10 @@ export class UserController extends BaseController<IUser> {
    */
   async login(req: Request, res: Response): Promise<Response | void> {
     try {
-      const { email, password } = req.body;
+      const { email, password } = req.body as {
+        email: string;
+        password: string;
+      };
 
       const result = await this.userService.login({ email, password });
 

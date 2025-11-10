@@ -226,7 +226,7 @@ export class OrderController extends BaseController<IOrder> {
         return ErrorResponse.send(res, result.message, result.statusCode);
       }
 
-      return SuccessResponse.send(res, (result as any).data || null, result.message);
+      return SuccessResponse.send(res, result.data || null, result.message);
     } catch (error) {
       console.error('Error in getOrderById controller:', error);
       return ErrorResponse.send(res, 'Internal server error', 500);

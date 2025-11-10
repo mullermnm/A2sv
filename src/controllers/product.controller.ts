@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { ProductService } from '@services/product.service';
-import { SuccessResponse, ErrorResponse } from '@helpers/index';
-import productRepository from '@repositories/product.repository';
-import { IProduct } from '@models/product.model';
 import { BaseController } from './BaseController';
+import { ProductService } from '@services/product.service';
+import { IProduct } from '@models/product.model';
+import { ErrorResponse, SuccessResponse } from '@helpers/index';
+import productRepository from '@repositories/product.repository';
+import { AuthRequest } from '@middlewares/auth.middleware';
 
 /**
  * Product Controller
@@ -111,13 +112,14 @@ export class ProductController extends BaseController<IProduct> {
   create = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
     try {
       // Get userId from authenticated user
-      const userId = (req as any).user?.userId;
+      const authReq = req as AuthRequest;
+      const userId = authReq.user?.userId;
 
       if (!userId) {
         return ErrorResponse.send(res, 'User not authenticated', 401);
       }
 
-      const result = await this.productService.createProduct(req.body, userId);
+      const result = await this.productService.createProduct(req.body as Partial<IProduct>, userId);
 
       if (!result.success) {
         return ErrorResponse.send(res, result.message, result.statusCode);
@@ -141,7 +143,7 @@ export class ProductController extends BaseController<IProduct> {
         return ErrorResponse.send(res, 'Product ID is required', 400);
       }
 
-      const result = await this.productService.updateProduct(id, req.body);
+      const result = await this.productService.updateProduct(id, req.body as Partial<IProduct>);
 
       if (!result.success) {
         return ErrorResponse.send(res, result.message, result.statusCode);
@@ -152,8 +154,6 @@ export class ProductController extends BaseController<IProduct> {
       next(error);
     }
   };
-
-  
 
   /**
    * Get product details by ID (User Story 7)
