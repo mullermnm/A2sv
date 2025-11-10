@@ -12,6 +12,9 @@ export const seedDatabase = async (): Promise<void> => {
     // - Create admin user
     // - Create sample products
     // - Create sample orders
+
+    // Placeholder to satisfy async requirement
+    await Promise.resolve();
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     throw error;

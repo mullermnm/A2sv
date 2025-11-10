@@ -344,7 +344,7 @@ describe('Product Management Tests', () => {
 
         expect(response.body.data.length).toBeLessThanOrEqual(2);
         expect(response.body).toHaveProperty('totalPages');
-        expect(response.body).toHaveProperty('currentPage');
+        expect(response.body).toHaveProperty('pageNumber');
         expect(response.body).toHaveProperty('pageSize');
       });
 
@@ -386,10 +386,10 @@ describe('Product Management Tests', () => {
           .query({ page: 1, limit: 2 })
           .expect(200);
 
-        expect(response.body.currentPage).toBe(1);
+        expect(response.body.pageNumber).toBe(1);
         expect(response.body.pageSize).toBe(2);
         expect(response.body.totalPages).toBeGreaterThan(0);
-        expect(response.body.totalProducts).toBeGreaterThan(0);
+        expect(response.body.totalSize).toBeGreaterThan(0);
       });
     });
   });
@@ -447,8 +447,8 @@ describe('Product Management Tests', () => {
         await request(app).get(`/api/products/${fakeId}`).expect(404);
       });
 
-      it('should return 404 for invalid product ID format', async () => {
-        await request(app).get('/api/products/invalid-id').expect(404);
+      it('should return 400 for invalid product ID format', async () => {
+        await request(app).get('/api/products/invalid-id').expect(400);
       });
     });
   });

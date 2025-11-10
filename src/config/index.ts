@@ -23,7 +23,7 @@ interface Config {
 
 // Load configuration from default.json
 const configPath = path.join(__dirname, 'default.json');
-const configData = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+const configData = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Config;
 
 // Load and export configuration
 export const appConfig: Config = {

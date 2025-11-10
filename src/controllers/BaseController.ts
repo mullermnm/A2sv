@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { Document } from 'mongoose';
+import { Document, FilterQuery } from 'mongoose';
 import { BaseService } from '@services/BaseService';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
 import { BaseQueryOptions } from '@src/types';
+import { BaseRepository } from '@repositories/BaseRepository';
 
 /**
  * Generic Base Controller class
@@ -41,20 +42,21 @@ export abstract class BaseController<T extends Document> {
       // Build filter from query params
       const filter = this.buildFilter(filters, search as string);
 
-      const result = await (this.service as any).repository.findAll(filter, options);
+      const repository = this.service['repository'] as unknown as BaseRepository<T>;
+      const result = await repository.findAll(filter, options);
 
       if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
+        return ErrorResponse.send(res, result.message || 'Operation failed', result.statusCode);
       }
 
       return SuccessResponse.paginated(
         res,
-        result.data,
+        result.data ?? [],
         {
-          pageNumber: result.page,
-          pageSize: result.limit,
-          totalSize: result.totalItems,
-          totalPages: result.totalPages,
+          pageNumber: result.page ?? 1,
+          pageSize: result.limit ?? 10,
+          totalSize: result.totalItems ?? 0,
+          totalPages: result.totalPages ?? 0,
         },
         result.message
       );
@@ -69,19 +71,20 @@ export abstract class BaseController<T extends Document> {
    */
   async getById(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
       const options: BaseQueryOptions = {
         select: ['-__v'],
       };
 
-      const result = await (this.service as any).repository.findById(id, options);
+      const repository = this.service['repository'] as unknown as BaseRepository<T>;
+      const result = await repository.findById(id, options);
 
       if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
+        return ErrorResponse.send(res, result.message || 'Operation failed', result.statusCode);
       }
 
-      return SuccessResponse.send(res, result.data, result.message);
+      return SuccessResponse.send(res, result.data, result.message || undefined, result.statusCode);
     } catch (error) {
       next(error);
     }
@@ -93,15 +96,17 @@ export abstract class BaseController<T extends Document> {
    */
   async create(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
+      // Prepare data for creation (override this method if needed)
       const data = this.prepareCreateData(req);
 
-      const result = await (this.service as any).repository.create(data);
+      const repository = this.service['repository'] as unknown as BaseRepository<T>;
+      const result = await repository.create(data);
 
       if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
+        return ErrorResponse.send(res, result.message || 'Operation failed', result.statusCode);
       }
 
-      return SuccessResponse.created(res, result.data, result.message);
+      return SuccessResponse.send(res, result.data, result.message || undefined, result.statusCode);
     } catch (error) {
       next(error);
     }
@@ -113,16 +118,18 @@ export abstract class BaseController<T extends Document> {
    */
   async update(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
+      // Prepare data for update (override this method if needed)
       const data = this.prepareUpdateData(req);
 
-      const result = await (this.service as any).repository.updateById(id, data);
+      const repository = this.service['repository'] as unknown as BaseRepository<T>;
+      const result = await repository.updateById(id, data);
 
       if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
+        return ErrorResponse.send(res, result.message || 'Operation failed', result.statusCode);
       }
 
-      return SuccessResponse.send(res, result.data, result.message);
+      return SuccessResponse.send(res, result.data, result.message || undefined, result.statusCode);
     } catch (error) {
       next(error);
     }
@@ -134,53 +141,51 @@ export abstract class BaseController<T extends Document> {
    */
   async delete(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
 
-      const result = await (this.service as any).repository.deleteById(id);
+      const repository = this.service['repository'] as unknown as BaseRepository<T>;
+      const result = await repository.deleteById(id);
 
       if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
+        return ErrorResponse.send(res, result.message || 'Operation failed', result.statusCode);
       }
 
-      return SuccessResponse.send(res, undefined, result.message);
+      return SuccessResponse.send(res, undefined, result.message || undefined, result.statusCode);
     } catch (error) {
       next(error);
     }
   }
 
   /**
-   * Build filter object from query parameters
-   * Override this method in child controllers for custom filtering
+   * Build filter from query parameters
+   * Override this method in child classes for custom filtering
    */
-  protected buildFilter(
-    filters: Record<string, unknown>,
-    _search?: string
-  ): Record<string, unknown> {
+  protected buildFilter(filters: Record<string, unknown>, _search?: string): FilterQuery<T> {
     const filter: Record<string, unknown> = {};
 
-    // Add custom filter logic here
+    // Copy all non-empty filters
     Object.keys(filters).forEach((key) => {
       if (filters[key] !== undefined && filters[key] !== '') {
         filter[key] = filters[key];
       }
     });
 
-    return filter;
+    return filter as FilterQuery<T>;
   }
 
   /**
-   * Prepare data for create operation
-   * Override this method in child controllers for custom data preparation
+   * Prepare data for creation
+   * Override this method in child classes for custom data preparation
    */
   protected prepareCreateData(req: Request): Partial<T> {
-    return req.body;
+    return req.body as Partial<T>;
   }
 
   /**
-   * Prepare data for update operation
-   * Override this method in child controllers for custom data preparation
+   * Prepare data for update
+   * Override this method in child classes for custom data preparation
    */
   protected prepareUpdateData(req: Request): Partial<T> {
-    return req.body;
+    return req.body as Partial<T>;
   }
 }

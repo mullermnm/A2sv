@@ -1,0 +1,59 @@
+version: '3.8'
+
+# ================================
+# Development Override Configuration
+# Use: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ================================
+
+services:
+  # ================================
+  # Backend API - Development Mode
+  # ================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        NODE_ENV: development
+    container_name: a2sv-backend-dev
+    environment:
+      NODE_ENV: development
+      # Enable debug logs in development
+      DEBUG: "*"
+      LOG_LEVEL: debug
+    volumes:
+      # Mount source code for live reload
+      - ./src:/app/src:ro
+      - ./nodemon.json:/app/nodemon.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+      # Named volume for node_modules (don't sync from host)
+      - /app/node_modules
+    command: npm run dev
+    # Override resource limits for development
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+  # ================================
+  # MongoDB - Development Mode
+  # ================================
+  mongo:
+    ports:
+      # Expose to host for easier debugging
+      - "27017:27017"
+    environment:
+      # Simpler credentials for development
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: a2sv_ecommerce_dev
+
+  # ================================
+  # Redis - Development Mode
+  # ================================
+  redis:
+    ports:
+      # Expose to host for easier debugging
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis123 --loglevel verbose
