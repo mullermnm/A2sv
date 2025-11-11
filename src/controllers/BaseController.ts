@@ -53,7 +53,7 @@ export abstract class BaseController<T extends Document> {
         res,
         result.data ?? [],
         {
-          pageNumber: result.page ?? 1,
+          currentPage: result.page ?? 1,
           pageSize: result.limit ?? 10,
           totalSize: result.totalItems ?? 0,
           totalPages: result.totalPages ?? 0,

@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { Application } from 'express';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import path from 'path';
 import fs from 'fs';
 import createApp from '../../src/app';
@@ -14,19 +14,24 @@ import Product from '../../src/models/product.model';
  */
 describe('Product Management Tests', () => {
   let app: Application;
-  let mongoServer: MongoMemoryServer;
+  let mongoServer: MongoMemoryReplSet;
   let adminToken: string;
   let userToken: string;
   let adminUserId: string;
 
   // Setup: Start in-memory MongoDB and Express app before all tests
   beforeAll(async () => {
+    jest.setTimeout(120000); // 2 minutes for replica set initialization
+    
     // Set required environment variables for tests
     process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing';
     process.env.JWT_EXPIRES_IN = '7d';
 
     // Start in-memory MongoDB
-    mongoServer = await MongoMemoryServer.create();
+    // Start in-memory MongoDB Replica Set for transaction support
+    mongoServer = await MongoMemoryReplSet.create({
+      replSet: { count: 1, storageEngine: 'wiredTiger' },
+    });
     const mongoUri = mongoServer.getUri();
     await mongoose.connect(mongoUri);
 
@@ -425,7 +430,7 @@ describe('Product Management Tests', () => {
 
         expect(response.body.data.length).toBeLessThanOrEqual(2);
         expect(response.body).toHaveProperty('totalPages');
-        expect(response.body).toHaveProperty('pageNumber');
+        expect(response.body).toHaveProperty('currentPage');
         expect(response.body).toHaveProperty('pageSize');
       });
 
@@ -467,7 +472,7 @@ describe('Product Management Tests', () => {
           .query({ page: 1, limit: 2 })
           .expect(200);
 
-        expect(response.body.pageNumber).toBe(1);
+        expect(response.body.currentPage).toBe(1);
         expect(response.body.pageSize).toBe(2);
         expect(response.body.totalPages).toBeGreaterThan(0);
         expect(response.body.totalSize).toBeGreaterThan(0);

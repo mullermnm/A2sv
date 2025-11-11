@@ -17,7 +17,7 @@ export interface PaginatedResponse<T = unknown> {
   success: boolean;
   message: string;
   data: T[];
-  pageNumber: number;
+  currentPage: number;
   pageSize: number;
   totalSize: number;
   totalPages: number;

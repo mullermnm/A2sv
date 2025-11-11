@@ -140,7 +140,6 @@ A2sv/
 ├── .eslintrc.js               # ESLint configuration
 ├── .prettierrc                # Prettier configuration
 ├── DOCKER_GUIDE.md            # Docker documentation
-├── ADVANCED_FILTERING_GUIDE.md # Filtering documentation
 └── package.json               # Project manifest
 ```
 
@@ -195,15 +194,65 @@ BCRYPT_SALT_ROUNDS=12
 CORS_ORIGIN=*
 ```
 
-### Step 4: Start MongoDB and Redis
+### Step 4: ⚠️ CRITICAL - Setup MongoDB Replica Set for Transactions
 
-**MongoDB:**
-```bash
-# Using MongoDB Community Edition
-mongod
+**Why?** This API uses MongoDB transactions for atomic operations (order placement, product updates). Transactions **require** a replica set, even for local development.
 
-# Or using Docker
-docker run -d -p 27017:27017 --name mongodb mongo:latest
+**⚠️ IMPORTANT:** If you have local MongoDB service running, you MUST stop it first (they conflict on port 27017).
+
+**Choose ONE setup method:**
+
+#### Option 1: Docker (Recommended - 2 minutes)
+
+**Run as Administrator in PowerShell:**
+
+```powershell
+# 1. Stop local MongoDB if running
+Stop-Service MongoDB
+
+# 2. Start MongoDB with replica set using Docker
+docker-compose up -d mongo mongo-init
+
+# 3. Wait for initialization
+Start-Sleep -Seconds 15
+
+# 4. Verify replica set
+docker exec -it a2sv-mongodb mongosh --eval "rs.status()"
+```
+
+You should see `"stateStr": "PRIMARY"` in the output.
+
+#### Option 2: PowerShell Script (3 minutes)
+
+```powershell
+# Run as Administrator
+.\setup-mongodb-replicaset.ps1
+
+# Verify
+mongosh --eval "rs.status()"
+```
+
+#### Option 3: Manual Setup (5 minutes)
+
+1. Edit MongoDB config: `C:\Program Files\MongoDB\Server\7.0\bin\mongod.cfg`
+2. Add at the end:
+   ```yaml
+   replication:
+     replSetName: "rs0"
+   ```
+3. Restart MongoDB:
+   ```powershell
+   net stop MongoDB
+   net start MongoDB
+   ```
+4. Initialize replica set:
+   ```powershell
+   mongosh --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})"
+   ```
+
+**✅ Your `.env` is already configured with:**
+```env
+MONGODB_URI=mongodb://localhost:27017/a2sv_ecommerce?replicaSet=rs0&directConnection=true
 ```
 
 **Redis (optional):**
@@ -211,11 +260,11 @@ docker run -d -p 27017:27017 --name mongodb mongo:latest
 # Using Redis locally
 redis-server
 
-# Or using Docker
-docker run -d -p 6379:6379 --name redis redis:latest
+# Or using Docker (if not using docker-compose)
+docker run -d -p 6379:6379 --name redis redis:alpine
 ```
 
-### Step 5: Run the application
+### Step 6: Run the application
 
 #### Option A: Local Development
 
@@ -246,8 +295,6 @@ docker compose logs -f
 # Stop all services
 docker compose down
 ```
-
-**For detailed Docker instructions, see [DOCKER_GUIDE.md](DOCKER_GUIDE.md)**
 
 ## 🧪 Testing
 
@@ -342,8 +389,6 @@ GET /api/v1/orders?startDate=2024-01-01&endDate=2024-12-31
 # Combined
 GET /api/v1/orders?status=delivered&minPrice=500&sort=-totalPrice
 ```
-
-**For complete filtering documentation, see [ADVANCED_FILTERING_GUIDE.md](ADVANCED_FILTERING_GUIDE.md)**
 
 ### File Upload (Product Images)
 
@@ -504,9 +549,6 @@ curl http://localhost:5000/api/uploads/products/abc123-uuid.jpg --output image.j
 ## 📖 Additional Documentation
 
 - **[Docker Guide](DOCKER_GUIDE.md)** - Complete Docker setup and deployment guide
-- **[Advanced Filtering Guide](ADVANCED_FILTERING_GUIDE.md)** - Detailed filtering and search documentation
-- **[Architecture Refactoring](ARCHITECTURE_REFACTORING.md)** - Architecture documentation
-- **[Filtering Implementation](FILTERING_IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
 
 ## 🤝 Contributing
 

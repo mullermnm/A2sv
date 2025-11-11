@@ -2,7 +2,7 @@ import { ClientSession, Types } from 'mongoose';
 import { BaseRepository } from './BaseRepository';
 import Order, { IOrder, IOrderProduct } from '../models/order.model';
 import { ErrorMessages } from '@helpers/index';
-import { CreateResult, FindAllResult, HttpStatus, OrderStatus } from '@src/types';
+import { CreateResult, HttpStatus, OrderStatus } from '@src/types';
 
 /**
  * Order Repository
@@ -40,53 +40,6 @@ export class OrderRepository extends BaseRepository<IOrder> {
         success: false,
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: ErrorMessages.OPERATION_FAILED,
-      };
-    }
-  }
-
-  /**
-   * Find all orders for a specific user with pagination
-   * Uses base findAll method
-   */
-  async findOrdersByUser(
-    userId: string,
-    page: number = 1,
-    limit: number = 10
-  ): Promise<FindAllResult<IOrder>> {
-    try {
-      if (!Types.ObjectId.isValid(userId)) {
-        return {
-          success: false,
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: ErrorMessages.INVALID_ID,
-          data: [],
-          page,
-          limit,
-          totalPages: 0,
-          totalItems: 0,
-        };
-      }
-
-      // Use base findAll with userId filter
-      return this.findAll(
-        { userId: new Types.ObjectId(userId) },
-        {
-          page,
-          limit,
-          sort: '-createdAt',
-        }
-      );
-    } catch (error) {
-      console.error('Error in findOrdersByUser:', error);
-      return {
-        success: false,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: ErrorMessages.OPERATION_FAILED,
-        data: [],
-        page,
-        limit,
-        totalPages: 0,
-        totalItems: 0,
       };
     }
   }
@@ -150,3 +103,6 @@ export class OrderRepository extends BaseRepository<IOrder> {
     }
   }
 }
+
+// Export singleton instance
+export default new OrderRepository();

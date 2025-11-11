@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { authenticate, adminOnly } from '@middlewares/auth.middleware';
 import { validate } from '@validators/middleware';
-import { createProductSchema, updateProductSchema } from '@validators/schemas/product.validator';
+import {
+  createProductSchema,
+  productQuerySchema,
+  updateProductSchema,
+} from '@validators/schemas/product.validator';
 import productController from '@controllers/product.controller';
 import { apiLimiter, adminLimiter } from '@middlewares/rateLimiter.middleware';
 import { cacheMiddleware } from '@middlewares/cache.middleware';
@@ -24,6 +28,7 @@ router.get(
   '/',
   apiLimiter,
   asyncHandler(cacheMiddleware(300)),
+  validate(productQuerySchema),
   asyncHandler(productController.getAll.bind(productController))
 );
 

@@ -22,10 +22,10 @@ RUN npm ci --no-audit --no-fund --include=dev
 # Copy application source code
 COPY . .
 
-# Compile TypeScript to JavaScript
+# Compile TypeScript to JavaScript and resolve path aliases
 RUN npm run build
 
-# Remove devDependencies to reduce size
+# Remove devDependencies
 RUN npm prune --production
 
 # ================================
@@ -57,8 +57,14 @@ COPY --chown=nodejs:nodejs package*.json ./
 # Copy production node_modules from builder stage
 COPY --chown=nodejs:nodejs --from=builder /app/node_modules ./node_modules
 
-# Copy compiled JavaScript from builder stage
+# Copy compiled JavaScript from builder stage (path aliases already resolved by tsc-alias)
 COPY --chown=nodejs:nodejs --from=builder /app/dist ./dist
+
+# Copy config JSON files (not copied by tsc)
+COPY --chown=nodejs:nodejs src/config/*.json ./dist/config/
+
+# Copy swagger documentation
+COPY --chown=nodejs:nodejs src/docs/swagger.yaml ./dist/docs/
 
 # Copy any additional necessary files (if needed)
 # COPY --chown=nodejs:nodejs --from=builder /app/public ./public
@@ -78,5 +84,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-# Adjust the entry point based on your dist structure
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]

@@ -492,7 +492,7 @@ describe('Order Management Tests', () => {
           .expect(200);
 
         expect(response.body.data.length).toBeLessThanOrEqual(1);
-        expect(response.body).toHaveProperty('pageNumber');
+        expect(response.body).toHaveProperty('currentPage');
         expect(response.body).toHaveProperty('pageSize');
         expect(response.body).toHaveProperty('totalPages');
         expect(response.body).toHaveProperty('totalSize');
@@ -505,7 +505,7 @@ describe('Order Management Tests', () => {
           .query({ page: 1, limit: 10 })
           .expect(200);
 
-        expect(response.body.pageNumber).toBe(1);
+        expect(response.body.currentPage).toBe(1);
         expect(response.body.pageSize).toBe(10);
         expect(response.body.totalSize).toBeGreaterThan(0);
       });
@@ -516,7 +516,7 @@ describe('Order Management Tests', () => {
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
-        expect(response.body.pageNumber).toBe(1);
+        expect(response.body.currentPage).toBe(1);
         expect(response.body.pageSize).toBe(10);
       });
     });
@@ -680,7 +680,7 @@ describe('Order Management Tests', () => {
       expect(response.body).toHaveProperty('success');
       expect(response.body).toHaveProperty('message');
       expect(response.body).toHaveProperty('data');
-      expect(response.body).toHaveProperty('pageNumber');
+      expect(response.body).toHaveProperty('currentPage');
       expect(response.body).toHaveProperty('pageSize');
       expect(response.body).toHaveProperty('totalPages');
       expect(response.body).toHaveProperty('totalSize');

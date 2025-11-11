@@ -1,9 +1,10 @@
-import { Types, startSession } from 'mongoose';
+import { Types } from 'mongoose';
 import { BaseService } from './BaseService';
 import { OrderRepository } from '../repositories/order.repository';
 import { ProductRepository } from '../repositories/product.repository';
 import { IOrder, IOrderProduct } from '../models/order.model';
-import { CreateResult, PlaceOrderRequest, HttpStatus } from '@src/types';
+import { IProduct } from '../models/product.model';
+import { PlaceOrderRequest, HttpStatus } from '@src/types';
 import { ErrorMessages, SuccessMessages, ErrorResponse, SuccessResponse } from '@helpers/index';
 
 /**
@@ -20,106 +21,131 @@ export class OrderService extends BaseService<IOrder> {
   }
 
   /**
-   * Place a new order with transaction support
+   * Place a new order with MongoDB transaction
    * User Story 9: Place Order
    * - Validates products and stock availability
-   * - Uses database transaction for atomic operations
+   * - Uses atomic transactions for data consistency
    * - Calculates total price on backend
-   * - Updates product stock
+   * - Updates product stock atomically
+   * 
+   * NOTE: Requires MongoDB replica set. See MONGODB_REPLICA_SET_SETUP.md
    */
   async placeOrder(userId: string, orderData: PlaceOrderRequest) {
-    // Start a MongoDB session for transaction
-    const session = await startSession();
+    // Start MongoDB transaction
+    const session = await this.repository.startTransaction();
 
     try {
       // Validate userId
       if (!Types.ObjectId.isValid(userId)) {
+        await session.abortTransaction();
+        await session.endSession();
         return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
       // Validate order data
       if (!orderData.products || orderData.products.length === 0) {
+        await session.abortTransaction();
+        await session.endSession();
         return ErrorResponse.createBadRequest('Order must contain at least one product');
       }
 
-      let orderResult: CreateResult<IOrder> | undefined;
+      const orderProducts: IOrderProduct[] = [];
 
-      // Execute within transaction
-      await session.withTransaction(async () => {
-        const orderProducts: IOrderProduct[] = [];
-
-        // Process each product in the order
-        for (const item of orderData.products) {
-          // Validate productId
-          if (!Types.ObjectId.isValid(item.productId)) {
-            throw new Error(`Invalid product ID: ${item.productId}`);
-          }
-
-          // Validate quantity
-          if (!item.quantity || item.quantity < 1) {
-            throw new Error('Product quantity must be at least 1');
-          }
-
-          // Fetch product details with transaction
-          const productResult = await this.productRepository.findByIdWithTransaction(
-            item.productId,
-            session
-          );
-
-          if (!productResult.success || !productResult.data) {
-            throw new Error(`Product not found: ${item.productId}`);
-          }
-
-          const product = productResult.data;
-
-          // Check stock availability
-          if (product.stock < item.quantity) {
-            throw new Error(
-              `Insufficient stock for product "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`
-            );
-          }
-
-          // Update product stock (deduct ordered quantity)
-          const newStock = product.stock - item.quantity;
-          const updateResult = await this.productRepository.updateByIdWithTransaction(
-            item.productId,
-            { stock: newStock },
-            session
-          );
-
-          if (!updateResult.success) {
-            throw new Error(`Failed to update stock for product: ${product.name}`);
-          }
-
-          // Add product to order with backend-calculated price
-          orderProducts.push({
-            productId: new Types.ObjectId(item.productId),
-            name: product.name,
-            price: product.price, // Use price from database, not from client
-            quantity: item.quantity,
-          });
+      // Process each product in the order
+      for (const item of orderData.products) {
+        // Validate productId
+        if (!Types.ObjectId.isValid(item.productId)) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error(`Invalid product ID: ${item.productId}`);
         }
 
-        // Create the order within transaction
-        const orderRepo = this.repository as OrderRepository;
-        const createResult = await orderRepo.createOrder(
-          new Types.ObjectId(userId),
-          orderProducts,
-          orderData.description || '',
+        // Validate quantity
+        if (!item.quantity || item.quantity < 1) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error('Product quantity must be at least 1');
+        }
+
+        // Fetch product details within transaction
+        const productResult = await this.productRepository.findByIdWithTransaction(
+          item.productId,
           session
         );
 
-        if (!createResult.success) {
-          throw new Error('Failed to create order');
+        if (!productResult.success || !productResult.data) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error(`Product not found: ${item.productId}`);
         }
 
-        orderResult = createResult;
-      });
+        const product = productResult.data;
 
-      // Transaction succeeded
-      return SuccessResponse.createCreated(orderResult?.data, SuccessMessages.OPERATION_SUCCESS);
+        // Check stock availability
+        if (product.stock < item.quantity) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error(
+            `Insufficient stock for product "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`
+          );
+        }
+
+        // Update product stock (deduct ordered quantity) within transaction
+        const newStock = product.stock - item.quantity;
+        const updateResult = await this.productRepository.updateByIdWithTransaction(
+          item.productId,
+          { stock: newStock } as Partial<IProduct>,
+          session
+        );
+
+        if (!updateResult.success) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error(`Failed to update stock for product: ${product.name}`);
+        }
+
+        // Add product to order with backend-calculated price
+        orderProducts.push({
+          productId: new Types.ObjectId(item.productId),
+          name: product.name,
+          price: product.price, // Use price from database, not from client
+          quantity: item.quantity,
+        });
+      }
+
+      // Create the order within transaction
+      const orderRepo = this.repository as OrderRepository;
+      const createResult = await orderRepo.createWithTransaction(
+        {
+          userId: new Types.ObjectId(userId),
+          products: orderProducts,
+          description: orderData.description || '',
+          status: 'pending',
+          totalPrice: 0, // Will be calculated by pre-save hook
+        } as Partial<IOrder>,
+        session
+      );
+
+      if (!createResult.success) {
+        await session.abortTransaction();
+        await session.endSession();
+        throw new Error('Failed to create order');
+      }
+
+      // Commit transaction - all operations succeeded
+      await session.commitTransaction();
+      await session.endSession();
+
+      return SuccessResponse.createCreated(createResult.data, SuccessMessages.OPERATION_SUCCESS);
     } catch (error) {
-      // Transaction will auto-rollback on error
+      // Abort transaction on any error
+      try {
+        await session.abortTransaction();
+        await session.endSession();
+      } catch {
+        // Session may already be ended
+      }
+
       console.error('Error in placeOrder:', error);
 
       const errorMessage = error instanceof Error ? error.message : ErrorMessages.OPERATION_FAILED;
@@ -137,57 +163,6 @@ export class OrderService extends BaseService<IOrder> {
       }
 
       return ErrorResponse.create(errorMessage, statusCode);
-    } finally {
-      // Always end the session
-      await session.endSession();
-    }
-  }
-
-  /**
-   * Get order history for a user
-   * User Story 10: View Order History
-   * - Returns only orders belonging to authenticated user
-   * - Supports pagination
-   */
-  async getUserOrders(userId: string, page: number = 1, limit: number = 10) {
-    try {
-      // Validate userId
-      if (!Types.ObjectId.isValid(userId)) {
-        return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
-      }
-
-      const orderRepo = this.repository as OrderRepository;
-      const result = await orderRepo.findOrdersByUser(userId, page, limit);
-
-      return result;
-    } catch (error) {
-      console.error('Error in getUserOrders:', error);
-      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
-    }
-  }
-
-  /**
-   * Get order history for a user with filters
-   * Supports filtering by status, price range, and date range
-   * - Returns only orders belonging to authenticated user
-   * - Supports pagination and filtering
-   */
-  async getUserOrdersWithFilters(
-    filters: Record<string, unknown>,
-    page: number = 1,
-    limit: number = 10
-  ) {
-    try {
-      // Use base repository's findAll with filters
-      const orderRepo = this.repository as OrderRepository;
-      return orderRepo.findAll(filters, {
-        page,
-        limit,
-        sort: '-createdAt',
-      });
-    } catch (error) {
-      console.error('Error in getUserOrdersWithFilters:', error);
-      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
 

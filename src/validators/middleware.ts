@@ -20,7 +20,6 @@ export const validate = (schema: Joi.ObjectSchema) => {
     if (validationResult.error) {
       // Extract error messages from Joi validation errors
       const errorMessages = validationResult.error.details.map((detail) => detail.message);
-
       return ErrorResponse.send(res, 'Validation failed', HttpStatus.BAD_REQUEST, errorMessages);
     }
 

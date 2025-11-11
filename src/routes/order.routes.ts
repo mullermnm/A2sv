@@ -5,9 +5,13 @@ import { orderLimiter, apiLimiter } from '@middlewares/rateLimiter.middleware';
 import { asyncHandler } from '@helpers/asyncHandler';
 import { validate } from '@validators/middleware';
 import { createOrderSchema } from '@validators/schemas/order.validator';
+import { OrderService } from '@services/order.service';
+import orderRepository from '@repositories/order.repository';
+import productRepository from '@repositories/product.repository';
 
 const router = Router();
-const orderController = new OrderController();
+const orderService = new OrderService(orderRepository, productRepository);
+const orderController = new OrderController(orderService);
 
 /**
  * @route   POST /api/orders
@@ -26,30 +30,18 @@ router.post(
 );
 
 /**
- * @route   GET /api/orders/my-orders
- * @desc    Get authenticated user's own orders (simple endpoint)
- * @access  Private
- * @query   page, limit (optional pagination)
- * @rateLimit 100 requests per 15 minutes per IP
- */
-router.get(
-  '/my-orders',
-  apiLimiter,
-  authenticate,
-  asyncHandler(orderController.getMyOrders.bind(orderController))
-);
-
-/**
  * @route   GET /api/orders
- * @desc    Get order history for authenticated user with filters
+ * @desc    Get all orders (Admin) or user's own orders (User)
  * @access  Private
+ * @query   page, limit, status (optional filters)
  * @rateLimit 100 requests per 15 minutes per IP
+ * @note    Admin sees all orders, regular users see only their own
  */
 router.get(
   '/',
   apiLimiter,
   authenticate,
-  asyncHandler(orderController.getOrderHistory.bind(orderController))
+  asyncHandler(orderController.getAll.bind(orderController))
 );
 
 /**
@@ -62,7 +54,7 @@ router.get(
   '/:id',
   apiLimiter,
   authenticate,
-  asyncHandler(orderController.getOrderById.bind(orderController))
+  asyncHandler(orderController.getById.bind(orderController))
 );
 
 export default router;

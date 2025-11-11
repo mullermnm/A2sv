@@ -28,7 +28,7 @@ export const sendPaginatedSuccess = <T>(
   res: Response,
   data: T[],
   pagination: {
-    pageNumber: number;
+    currentPage: number;
     pageSize: number;
     totalSize: number;
     totalPages: number;
@@ -40,7 +40,7 @@ export const sendPaginatedSuccess = <T>(
     success: true,
     message: message || SuccessMessages.DATA_RETRIEVED,
     data,
-    pageNumber: pagination.pageNumber,
+    currentPage: pagination.currentPage,
     pageSize: pagination.pageSize,
     totalSize: pagination.totalSize,
     totalPages: pagination.totalPages,
@@ -89,7 +89,7 @@ export class SuccessResponse {
     res: Response,
     data: T[],
     pagination: {
-      pageNumber: number;
+      currentPage: number;
       pageSize: number;
       totalSize: number;
       totalPages: number;

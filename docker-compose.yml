@@ -19,16 +19,13 @@ volumes:
 # ================================
 services:
   # ================================
-  # MongoDB Database
+  # MongoDB Database (with Replica Set)
   # ================================
   mongo:
     image: mongo:7.0
     container_name: a2sv-mongodb
     restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin123}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-a2sv_ecommerce}
+    command: ["--replSet", "rs0", "--bind_ip_all", "--noauth"]
     ports:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
@@ -44,33 +41,35 @@ services:
       start_period: 10s
 
   # ================================
-  # MongoDB Replica Set Initialization (Disabled for development)
+  # MongoDB Replica Set Initialization
   # ================================
-  # Uncomment if you need MongoDB replica set for transactions
-  # mongo-init:
-  #   image: mongo:7.0
-  #   container_name: a2sv-mongodb-init
-  #   depends_on:
-  #     - mongo
-  #   networks:
-  #     - a2sv-network
-  #   restart: "no"
-  #   entrypoint: >
-  #     bash -c "
-  #       sleep 10 &&
-  #       mongosh --host mongo:27017 --eval '
-  #         try {
-  #           rs.status();
-  #           print(\"Replica set already initialized\");
-  #         } catch(e) {
-  #           rs.initiate({
-  #             _id: \"rs0\",
-  #             members: [{ _id: 0, host: \"mongo:27017\" }]
-  #           });
-  #           print(\"Replica set initialized\");
-  #         }
-  #       '
-  #     "
+  mongo-init:
+    image: mongo:7.0
+    container_name: a2sv-mongodb-init
+    depends_on:
+      - mongo
+    networks:
+      - a2sv-network
+    restart: "no"
+    entrypoint: >
+      bash -c "
+        sleep 10 &&
+        mongosh --host mongo:27017 --eval '
+          try {
+            rs.status();
+            print(\"✅ Replica set already initialized\");
+          } catch(e) {
+            rs.initiate({
+              _id: \"rs0\",
+              members: [{ _id: 0, host: \"mongo:27017\" }]
+            });
+            print(\"✅ Replica set initialized successfully\");
+            print(\"Waiting for primary election...\");
+            sleep(2000);
+            print(\"✅ MongoDB ready for transactions!\");
+          }
+        '
+      "
 
   # ================================
   # Redis Cache

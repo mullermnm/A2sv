@@ -1,11 +1,11 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { BaseController } from './BaseController';
 import { OrderService } from '../services/order.service';
-import { OrderRepository } from '../repositories/order.repository';
-import { ProductRepository } from '../repositories/product.repository';
+import orderRepository from '@src/repositories/order.repository';
+import productRepository from '@src/repositories/product.repository';
 import { IOrder } from '../models/order.model';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
-import { AuthRequest, PlaceOrderBody } from '@src/types';
+import { AuthRequest, PlaceOrderBody, UserRole } from '@src/types';
 
 /**
  * Order Controller
@@ -14,30 +14,29 @@ import { AuthRequest, PlaceOrderBody } from '@src/types';
 export class OrderController extends BaseController<IOrder> {
   private orderService: OrderService;
 
-  constructor() {
-    const orderRepository = new OrderRepository();
-    const productRepository = new ProductRepository();
-    const orderService = new OrderService(orderRepository, productRepository);
-
+  constructor(orderService: OrderService) {
     super(orderService);
     this.orderService = orderService;
-
-    // Bind custom methods to preserve 'this' context
-    this.placeOrder = this.placeOrder.bind(this);
-    this.getOrderHistory = this.getOrderHistory.bind(this);
-    this.getOrderById = this.getOrderById.bind(this);
   }
 
   /**
    * Override buildFilter to add order filtering
    * Supports:
+   * - userId: Filter by user (added automatically for non-admin)
    * - status: Order status filtering (pending, processing, shipped, delivered, cancelled)
    * - minPrice, maxPrice: Total price range filtering
    * - startDate, endDate: Date range filtering
-   * Note: userId filtering is handled in custom methods for security
    */
-  protected buildFilter(filters: Record<string, unknown>): Record<string, unknown> {
+  protected buildFilter(
+    filters: Record<string, unknown>,
+    _search?: string
+  ): Record<string, unknown> {
     const filter: Record<string, unknown> = {};
+
+    // User ID filtering (for security - non-admin users)
+    if (filters.userId) {
+      filter.userId = filters.userId;
+    }
 
     // Status filtering (pending, processing, shipped, delivered, cancelled)
     if (filters.status && typeof filters.status === 'string') {
@@ -86,6 +85,23 @@ export class OrderController extends BaseController<IOrder> {
   }
 
   /**
+   * Override getAll to add userId filter for non-admin users
+   * GET /api/orders
+   * @access Private (Admin sees all, users see only their own)
+   */
+  async getAll(req: Request, res: Response): Promise<Response | void> {
+    const authReq = req as AuthRequest;
+
+    // Add userId filter for non-admin users
+    if (authReq.user && authReq.user.role !== UserRole.ADMIN) {
+      req.query.userId = authReq.user.userId;
+    }
+
+    // Call parent getAll with modified query
+    return super.getAll(req, res, () => {});
+  }
+
+  /**
    * Place a new order
    * POST /api/orders
    * @access Private (Authenticated users)
@@ -96,17 +112,7 @@ export class OrderController extends BaseController<IOrder> {
       const userId = req.user!.userId;
       const orderData = req.body as PlaceOrderBody;
 
-      // Validate each product item
-      for (const item of orderData.products) {
-        if (!item.productId || !item.quantity) {
-          return ErrorResponse.send(res, 'Each product must have productId and quantity', 400);
-        }
-        if (typeof item.quantity !== 'number' || item.quantity < 1) {
-          return ErrorResponse.send(res, 'Quantity must be a number greater than 0', 400);
-        }
-      }
-
-      // Place the order using service
+      // Place the order using service (validation already done by Joi middleware)
       const result = await this.orderService.placeOrder(userId, orderData);
 
       if (!result.success) {
@@ -121,121 +127,20 @@ export class OrderController extends BaseController<IOrder> {
   }
 
   /**
-   * Get user's own orders (simple endpoint)
-   * GET /api/orders/my-orders
-   * @access Private (Authenticated users)
-   * Uses req.user.userId from auth middleware
-   * Accepts query parameters for pagination
-   */
-  async getMyOrders(req: AuthRequest, res: Response): Promise<Response | void> {
-    try {
-      // Check authentication
-      if (!req.user || !req.user.userId) {
-        return ErrorResponse.send(res, 'Unauthorized', 401);
-      }
-
-      const userId = req.user.userId;
-
-      // Get pagination parameters from query
-      const page = parseInt((req.query.page as string) || '1', 10);
-      const limit = parseInt((req.query.limit as string) || '10', 10);
-
-      // Call repository's findAll directly through service
-      const orderRepo = this.service['repository'] as OrderRepository;
-      const result = await orderRepo.findOrdersByUser(userId, page, limit);
-
-      if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
-      }
-
-      return SuccessResponse.paginated(
-        res,
-        result.data,
-        {
-          pageNumber: result.page,
-          pageSize: result.limit,
-          totalPages: result.totalPages,
-          totalSize: result.totalItems,
-        },
-        'Orders retrieved successfully'
-      );
-    } catch (error) {
-      console.error('Error in getMyOrders controller:', error);
-      return ErrorResponse.send(res, 'Internal server error', 500);
-    }
-  }
-
-  /**
-   * Get order history for authenticated user with filtering
-   * GET /api/orders
-   * @access Private (Authenticated users)
-   * User Story 10: View Order History
-   * Supports filtering by status, price range, and date range
-   */
-  async getOrderHistory(req: AuthRequest, res: Response): Promise<Response | void> {
-    try {
-      // Check authentication
-      if (!req.user || !req.user.userId) {
-        return ErrorResponse.send(res, 'Unauthorized', 401);
-      }
-
-      const userId = req.user.userId;
-
-      // Get pagination parameters
-      const page = parseInt((req.query.page as string) || '1', 10);
-      const limit = parseInt((req.query.limit as string) || '10', 10);
-
-      // Build filters from query parameters
-      const filters = this.buildFilter(req.query);
-
-      // Add userId filter for security (user can only see their own orders)
-      filters.userId = userId;
-
-      // Get user's orders with filters
-      const result = await this.orderService.getUserOrdersWithFilters(filters, page, limit);
-
-      if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
-      }
-
-      return SuccessResponse.paginated(
-        res,
-        result.data,
-        {
-          pageNumber: result.page,
-          pageSize: result.limit,
-          totalPages: result.totalPages,
-          totalSize: result.totalItems,
-        },
-        result.message
-      );
-    } catch (error) {
-      console.error('Error in getOrderHistory controller:', error);
-      return ErrorResponse.send(res, 'Internal server error', 500);
-    }
-  }
-
-  /**
-   * Get a single order by ID
+   * Override getById to ensure users can only access their own orders
    * GET /api/orders/:id
-   * @access Private (Authenticated users - own orders only)
+   * @access Private (Admin can see any order, users only their own)
    */
-  async getOrderById(req: AuthRequest, res: Response): Promise<Response | void> {
+  async getById(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      // Check authentication
-      if (!req.user || !req.user.userId) {
-        return ErrorResponse.send(res, 'Unauthorized', 401);
-      }
-
-      const userId = req.user.userId;
       const orderId = req.params.id;
 
       if (!orderId) {
         return ErrorResponse.send(res, 'Order ID is required', 400);
       }
 
-      // Get order (ensures user can only access their own orders)
-      const result = await this.orderService.getOrderById(orderId, userId);
+      // Get order using service
+      const result = await this.orderService.getOrderById(orderId, req.user!.userId);
 
       if (!result.success) {
         return ErrorResponse.send(res, result.message, result.statusCode);
@@ -248,3 +153,6 @@ export class OrderController extends BaseController<IOrder> {
     }
   }
 }
+
+// Export singleton instance
+export default new OrderController(new OrderService(orderRepository, productRepository));

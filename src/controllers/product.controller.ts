@@ -121,15 +121,9 @@ export class ProductController extends BaseController<IProduct> {
    */
   create = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
     try {
-      // Get userId from authenticated user
       const authReq = req as AuthRequest;
-      const userId = authReq.user?.userId;
-
-      if (!userId) {
-        return ErrorResponse.send(res, 'User not authenticated', 401);
-      }
-
-      const result = await this.productService.createProduct(req.body as Partial<IProduct>, userId);
+      (req.body as Record<string, unknown>).userId = authReq.user!.userId;
+      const result = await productRepository.create(req.body as Partial<IProduct>);
 
       if (!result.success) {
         return ErrorResponse.send(res, result.message, result.statusCode);
