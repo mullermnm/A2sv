@@ -125,33 +125,6 @@ export class OrderController extends BaseController<IOrder> {
       return ErrorResponse.send(res, 'Internal server error', 500);
     }
   }
-
-  /**
-   * Override getById to ensure users can only access their own orders
-   * GET /api/orders/:id
-   * @access Private (Admin can see any order, users only their own)
-   */
-  async getById(req: AuthRequest, res: Response): Promise<Response | void> {
-    try {
-      const orderId = req.params.id;
-
-      if (!orderId) {
-        return ErrorResponse.send(res, 'Order ID is required', 400);
-      }
-
-      // Get order using service
-      const result = await this.orderService.getOrderById(orderId, req.user!.userId);
-
-      if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
-      }
-
-      return SuccessResponse.send(res, result.data || null, result.message);
-    } catch (error) {
-      console.error('Error in getOrderById controller:', error);
-      return ErrorResponse.send(res, 'Internal server error', 500);
-    }
-  }
 }
 
 // Export singleton instance

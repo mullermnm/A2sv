@@ -27,7 +27,7 @@ export class OrderService extends BaseService<IOrder> {
    * - Uses atomic transactions for data consistency
    * - Calculates total price on backend
    * - Updates product stock atomically
-   * 
+   *
    * NOTE: Requires MongoDB replica set. See MONGODB_REPLICA_SET_SETUP.md
    */
   async placeOrder(userId: string, orderData: PlaceOrderRequest) {
@@ -42,31 +42,10 @@ export class OrderService extends BaseService<IOrder> {
         return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
-      // Validate order data
-      if (!orderData.products || orderData.products.length === 0) {
-        await session.abortTransaction();
-        await session.endSession();
-        return ErrorResponse.createBadRequest('Order must contain at least one product');
-      }
-
       const orderProducts: IOrderProduct[] = [];
 
       // Process each product in the order
       for (const item of orderData.products) {
-        // Validate productId
-        if (!Types.ObjectId.isValid(item.productId)) {
-          await session.abortTransaction();
-          await session.endSession();
-          throw new Error(`Invalid product ID: ${item.productId}`);
-        }
-
-        // Validate quantity
-        if (!item.quantity || item.quantity < 1) {
-          await session.abortTransaction();
-          await session.endSession();
-          throw new Error('Product quantity must be at least 1');
-        }
-
         // Fetch product details within transaction
         const productResult = await this.productRepository.findByIdWithTransaction(
           item.productId,
@@ -114,8 +93,7 @@ export class OrderService extends BaseService<IOrder> {
       }
 
       // Create the order within transaction
-      const orderRepo = this.repository as OrderRepository;
-      const createResult = await orderRepo.createWithTransaction(
+      const createResult = await this.repository.createWithTransaction(
         {
           userId: new Types.ObjectId(userId),
           products: orderProducts,
@@ -129,7 +107,7 @@ export class OrderService extends BaseService<IOrder> {
       if (!createResult.success) {
         await session.abortTransaction();
         await session.endSession();
-        throw new Error('Failed to create order');
+        return createResult;
       }
 
       // Commit transaction - all operations succeeded
@@ -149,41 +127,7 @@ export class OrderService extends BaseService<IOrder> {
       console.error('Error in placeOrder:', error);
 
       const errorMessage = error instanceof Error ? error.message : ErrorMessages.OPERATION_FAILED;
-
-      // Determine appropriate status code based on error
-      let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-      if (errorMessage.includes('not found')) {
-        statusCode = HttpStatus.NOT_FOUND;
-      } else if (
-        errorMessage.includes('Invalid') ||
-        errorMessage.includes('Insufficient') ||
-        errorMessage.includes('must')
-      ) {
-        statusCode = HttpStatus.BAD_REQUEST;
-      }
-
-      return ErrorResponse.create(errorMessage, statusCode);
-    }
-  }
-
-  /**
-   * Get a single order by ID for a user
-   * Ensures user can only access their own orders
-   */
-  async getOrderById(orderId: string, userId: string) {
-    try {
-      // Validate IDs
-      if (!Types.ObjectId.isValid(orderId) || !Types.ObjectId.isValid(userId)) {
-        return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
-      }
-
-      const orderRepo = this.repository as OrderRepository;
-      const result = await orderRepo.findOrderByIdAndUser(orderId, userId);
-
-      return result;
-    } catch (error) {
-      console.error('Error in getOrderById:', error);
-      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
+      return ErrorResponse.create(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

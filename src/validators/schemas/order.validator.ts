@@ -7,7 +7,7 @@ export const createOrderSchema = Joi.object({
     .items(
       Joi.object({
         productId: Joi.string().required(),
-        quantity: Joi.number().required(),
+        quantity: Joi.number().positive().required(),
       })
     )
     .messages({
