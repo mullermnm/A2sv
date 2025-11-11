@@ -15,6 +15,7 @@ const ensureDirectoryExists = (directory: string): void => {
 
 /**
  * Create multer disk storage for specified destination
+ * @param destination - Can be a simple folder name (e.g., 'products') or a full path (e.g., 'uploads/products')
  */
 const storage = (destination: string): StorageEngine => {
   return multer.diskStorage({
@@ -23,7 +24,7 @@ const storage = (destination: string): StorageEngine => {
       file: Express.Multer.File,
       next: (error: Error | null, destination: string) => void
     ) {
-      const dest = `./storage/${destination}/${file.fieldname}`;
+      const dest = `./uploads/${destination}/${file.fieldname}`;
       try {
         ensureDirectoryExists(dest);
         console.log('req:', req);
@@ -81,11 +82,21 @@ const fileFilter = function (
 /**
  * Save uploaded file path to request body
  * Replaces the field with the file path so it can be directly stored in database
+ * For paths starting with 'uploads/', transforms to API-accessible format
  */
 const saveFileToBody = (req: Request, fieldname: string): void => {
   if (req.file && req.file.fieldname === fieldname) {
-    // Store the actual file path in the document field
-    (req.body as Record<string, unknown>)[fieldname] = req.file.path;
+    let filePath = req.file.path;
+
+    // Transform 'uploads/' paths to API-accessible format
+    if (filePath.startsWith('uploads/')) {
+      // Extract the part after 'uploads/' and create API path
+      const relativePath = filePath.replace(/\\/g, '/').substring('uploads/'.length);
+      filePath = `/api/uploads/${relativePath}`;
+    }
+
+    // Store the transformed path in the document field
+    (req.body as Record<string, unknown>)[fieldname] = filePath;
     console.log('File saved to body:', {
       fieldname,
       path: (req.body as Record<string, unknown>)[fieldname],

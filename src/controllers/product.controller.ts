@@ -166,30 +166,6 @@ export class ProductController extends BaseController<IProduct> {
   };
 
   /**
-   * Get product details by ID (User Story 7)
-   * GET /api/products/:id
-   * Public
-   */
-  getById = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
-    try {
-      const { id } = req.params;
-      if (!id) {
-        return ErrorResponse.send(res, 'Product ID is required', 400);
-      }
-
-      const result = await this.productService.getProductById(id);
-
-      if (!result.success) {
-        return ErrorResponse.send(res, result.message, result.statusCode);
-      }
-
-      return SuccessResponse.send(res, result.data, result.message, result.statusCode);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
    * Delete a product (User Story 8)
    * DELETE /api/products/:id
    * Admin only

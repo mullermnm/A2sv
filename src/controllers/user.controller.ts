@@ -4,7 +4,7 @@ import { UserService } from '@services/user.service';
 import { IUser } from '@models/user.model';
 import { SuccessResponse, ErrorResponse } from '@helpers/index';
 import userRepository from '@repositories/user.repository';
-import { RegisterRequest } from '@src/types';
+import { LoginRequest, RegisterRequest } from '@src/types';
 
 /**
  * User Controller
@@ -53,10 +53,7 @@ export class UserController extends BaseController<IUser> {
    */
   async login(req: Request, res: Response): Promise<Response | void> {
     try {
-      const { email, password } = req.body as {
-        email: string;
-        password: string;
-      };
+      const { email, password } = req.body as LoginRequest;
 
       const result = await this.userService.login({ email, password });
 

@@ -100,24 +100,6 @@ export class UserService extends BaseService<IUser> {
       return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
     }
   }
-
-  /**
-   * Get user by ID (without password)
-   */
-  async getUserById(userId: string) {
-    try {
-      const result = await this.userRepository.findById(userId);
-
-      if (!result.success) {
-        return result;
-      }
-
-      return SuccessResponse.createOk(result.data, 'User retrieved successfully');
-    } catch (error) {
-      console.error('Error in UserService.getUserById:', error);
-      return ErrorResponse.createInternalError(ErrorMessages.OPERATION_FAILED);
-    }
-  }
 }
 
 // Export singleton instance

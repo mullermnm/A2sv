@@ -100,52 +100,6 @@ ProductSchema.index({ price: 1 }); // For price range queries
 ProductSchema.index({ createdAt: -1 }); // For sorting by newest
 
 /**
- * Virtual: Check if product is available
- */
-ProductSchema.virtual('isAvailable').get(function () {
-  return this.stock > 0;
-});
-
-/**
- * Static method: Find products by category
- */
-ProductSchema.statics.findByCategory = function (category: string) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  return this.find({ category: category.toLowerCase() }).sort({ createdAt: -1 });
-};
-
-/**
- * Static method: Find products in stock
- */
-ProductSchema.statics.findInStock = function () {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  return this.find({ stock: { $gt: 0 } }).sort({ createdAt: -1 });
-};
-
-/**
- * Instance method: Reduce stock
- */
-ProductSchema.methods.reduceStock = async function (quantity: number): Promise<boolean> {
-  if (this.stock >= quantity) {
-    this.stock -= quantity;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    await this.save();
-    return true;
-  }
-  return false;
-};
-
-/**
- * Instance method: Increase stock
- */
-ProductSchema.methods.increaseStock = async function (quantity: number): Promise<boolean> {
-  this.stock += quantity;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  await this.save();
-  return true;
-};
-
-/**
  * Product Model
  */
 export default model<IProduct>('Product', ProductSchema);

@@ -29,11 +29,6 @@ coverage/
 *.test.js
 *.spec.js
 
-
-#ai
-.windsurf/
-.windsurf/rules/
-
 # IDE
 .vscode/
 .idea/

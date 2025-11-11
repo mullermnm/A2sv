@@ -11,9 +11,9 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:5000/api
+  - url: http://localhost:5000/api/v1
     description: Development server
-  - url: https://api.example.com/api
+  - url: https://api.example.com/api/v1
     description: Production server
 
 tags:
@@ -157,9 +157,18 @@ components:
           type: integer
         category:
           type: string
+        productImage:
+          type: string
+          description: API-accessible path to product image
+          example: /api/uploads/products/abc123.jpg
+          nullable: true
         userId:
           type: string
           description: ID of the admin who created the product
+        status:
+          type: string
+          enum: [active, deleted]
+          example: active
         createdAt:
           type: string
           format: date-time
@@ -473,14 +482,12 @@ paths:
           description: Page number
           schema:
             type: integer
-            default: 1
             minimum: 1
         - name: limit
           in: query
           description: Number of products per page
           schema:
             type: integer
-            default: 10
             minimum: 1
             maximum: 100
         - name: search
@@ -494,54 +501,45 @@ paths:
           schema:
             type: number
             minimum: 0
-            example: 100
         - name: maxPrice
           in: query
           description: Maximum price filter
           schema:
             type: number
             minimum: 0
-            example: 1000
         - name: category
           in: query
           description: Filter by product category
           schema:
             type: string
-            example: electronics
         - name: status
           in: query
           description: Filter by product status
           schema:
             type: string
             enum: [active, deleted]
-            example: active
         - name: minStock
           in: query
           description: Minimum stock quantity filter
           schema:
             type: integer
             minimum: 0
-            example: 10
         - name: maxStock
           in: query
           description: Maximum stock quantity filter
           schema:
             type: integer
             minimum: 0
-            example: 100
         - name: inStock
           in: query
           description: Filter for in-stock products only (stock > 0)
           schema:
             type: boolean
-            example: true
         - name: sort
           in: query
           description: Sort field and order (prefix with - for descending)
           schema:
             type: string
-            example: -price
-            default: -createdAt
       responses:
         '200':
           description: Products retrieved successfully
@@ -554,15 +552,46 @@ paths:
       tags:
         - Products
       summary: Create product (User Story 3)
-      description: Create a new product (Admin only)
+      description: Create a new product with optional image upload (Admin only)
       security:
         - bearerAuth: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ProductRequest'
+              type: object
+              required:
+                - name
+                - description
+                - price
+                - stock
+                - category
+              properties:
+                name:
+                  type: string
+                  minLength: 3
+                  maxLength: 100
+                  example: Wireless Headphones
+                description:
+                  type: string
+                  minLength: 10
+                  example: High-quality wireless headphones with noise cancellation
+                price:
+                  type: number
+                  minimum: 0.01
+                  example: 99.99
+                stock:
+                  type: integer
+                  minimum: 0
+                  example: 50
+                category:
+                  type: string
+                  example: Electronics
+                productImage:
+                  type: string
+                  format: binary
+                  description: Optional product image (JPEG, PNG, GIF, WebP, or PDF, max 5MB)
       responses:
         '201':
           description: Product created successfully
@@ -625,7 +654,7 @@ paths:
       tags:
         - Products
       summary: Update product (User Story 4)
-      description: Update an existing product (Admin only)
+      description: Update an existing product with optional image upload (Admin only)
       security:
         - bearerAuth: []
       parameters:
@@ -638,9 +667,34 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ProductRequest'
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 3
+                  maxLength: 100
+                  example: Wireless Headphones
+                description:
+                  type: string
+                  minLength: 10
+                  example: High-quality wireless headphones with noise cancellation
+                price:
+                  type: number
+                  minimum: 0.01
+                  example: 99.99
+                stock:
+                  type: integer
+                  minimum: 0
+                  example: 50
+                category:
+                  type: string
+                  example: Electronics
+                productImage:
+                  type: string
+                  format: binary
+                  description: Optional product image (JPEG, PNG, GIF, WebP, or PDF, max 5MB)
       responses:
         '200':
           description: Product updated successfully
