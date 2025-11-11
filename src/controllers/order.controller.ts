@@ -6,6 +6,7 @@ import productRepository from '@src/repositories/product.repository';
 import { IOrder } from '../models/order.model';
 import { ErrorResponse, SuccessResponse } from '@helpers/index';
 import { AuthRequest, PlaceOrderBody, UserRole } from '@src/types';
+import { Types } from 'mongoose';
 
 /**
  * Order Controller
@@ -99,6 +100,31 @@ export class OrderController extends BaseController<IOrder> {
 
     // Call parent getAll with modified query
     return super.getAll(req, res, () => {});
+  }
+
+  /**
+   * Get single document by ID and by userId
+   * GET /resource/:id
+   */
+  async getById(req: Request, res: Response): Promise<Response | void> {
+    try {
+      const id = req.params.id as string;
+
+      // make sure user can only see his order
+      const result = await orderRepository.findOne({
+        _id: new Types.ObjectId(id),
+        userId: req.user?.role === UserRole.ADMIN ? req.user?.userId : req.user?.userId,
+      });
+
+      if (!result.success) {
+        return ErrorResponse.send(res, result.message || 'Operation failed', result.statusCode);
+      }
+
+      return SuccessResponse.send(res, result.data, result.message || undefined, result.statusCode);
+    } catch (error) {
+      console.error('Error in getById controller:', error);
+      return ErrorResponse.send(res, 'Internal server error', 500);
+    }
   }
 
   /**
