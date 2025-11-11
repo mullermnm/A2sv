@@ -9,7 +9,7 @@ import User from '../../src/models/user.model';
  * Integration Tests for User Registration (User Story 1)
  * Tests all acceptance criteria from requirements
  */
-describe('POST /api/auth/register - User Registration (User Story 1)', () => {
+describe('POST /api/v1/auth/register - User Registration (User Story 1)', () => {
   let app: Application;
   let mongoServer: MongoMemoryServer;
 
@@ -51,7 +51,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect('Content-Type', /json/)
         .expect(201);
@@ -83,7 +83,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(201);
 
@@ -98,7 +98,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(201);
 
@@ -112,7 +112,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
         password: 'SecurePass123!',
       };
 
-      await request(app).post('/api/auth/register').send(userData).expect(201);
+      await request(app).post('/api/v1/auth/register').send(userData).expect(201);
 
       // Verify password is hashed in database
       const user = await User.findOne({ email: userData.email }).select('+password');
@@ -134,7 +134,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -151,7 +151,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -165,7 +165,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -181,11 +181,11 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       // Register first user
-      await request(app).post('/api/auth/register').send(userData).expect(201);
+      await request(app).post('/api/v1/auth/register').send(userData).expect(201);
 
       // Try to register with same email
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send({
           username: 'user2',
           email: 'duplicate@example.com',
@@ -210,7 +210,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -227,7 +227,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -241,7 +241,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -255,7 +255,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
         password: 'Test123!@#',
       };
 
-      await request(app).post('/api/auth/register').send(userData).expect(201);
+      await request(app).post('/api/v1/auth/register').send(userData).expect(201);
     });
 
     it('should reject duplicate username (400)', async () => {
@@ -266,11 +266,11 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       // Register first user
-      await request(app).post('/api/auth/register').send(userData).expect(201);
+      await request(app).post('/api/v1/auth/register').send(userData).expect(201);
 
       // Try to register with same username
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send({
           username: 'uniqueuser',
           email: 'user2@example.com',
@@ -295,7 +295,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -311,7 +311,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -327,7 +327,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -343,7 +343,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -359,7 +359,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -374,7 +374,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 
@@ -396,7 +396,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
           password,
         };
 
-        await request(app).post('/api/auth/register').send(userData).expect(201);
+        await request(app).post('/api/v1/auth/register').send(userData).expect(201);
       }
     });
   });
@@ -413,7 +413,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(201);
 
@@ -430,7 +430,7 @@ describe('POST /api/auth/register - User Registration (User Story 1)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/register')
+        .post('/api/v1/auth/register')
         .send(userData)
         .expect(400);
 

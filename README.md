@@ -50,9 +50,13 @@ Enterprise-grade TypeScript REST API for an e-commerce platform built with Expre
 - ✅ Docker & Docker Compose setup
 - ✅ Production-grade multi-stage Dockerfile
 - ✅ MongoDB replica set for transactions
-- ✅ Redis caching support
+- ✅ Redis caching with automatic invalidation
+- ✅ Rate limiting (API and admin endpoints)
+- ✅ File upload with Multer (product images)
 - ✅ Health checks for all services
 - ✅ Non-root container execution
+- ✅ Sentry error tracking integration
+- ✅ Winston structured logging
 
 ### Developer Experience
 - ✅ Swagger/OpenAPI documentation
@@ -104,14 +108,21 @@ A2sv/
 │   │   └── order.routes.ts    # Order routes
 │   ├── middlewares/           # Custom middleware
 │   │   ├── auth.middleware.ts # JWT authentication
+│   │   ├── cache.middleware.ts # Redis caching
 │   │   ├── error.middleware.ts # Error handling
-│   │   └── validate.middleware.ts # Request validation
+│   │   └── rateLimiter.middleware.ts # Rate limiting
+│   ├── validators/            # Request validation
+│   │   ├── middleware.ts      # Joi validation middleware
+│   │   ├── user.validator.ts  # User validation schemas
+│   │   ├── product.validator.ts # Product validation schemas
+│   │   └── order.validator.ts # Order validation schemas
 │   ├── helpers/               # Utility functions
 │   │   ├── responses/         # Response helpers
-│   │   └── validators/        # Validation schemas
+│   │   └── multer.helper.ts   # File upload configuration
+│   ├── utils/                 # Utility modules
+│   │   └── logger.ts          # Winston logger
 │   └── types/                 # Type definitions
-│       ├── common.types.ts    # Common types
-│       └── index.ts           # Type exports
+│       └── index.ts           # Type exports and interfaces
 ├── tests/                     # Test files (105 tests)
 │   ├── auth/                  # Authentication tests
 │   ├── products/              # Product tests
@@ -282,14 +293,17 @@ Once the server is running, visit:
 - `GET /api/v1/products/:id` - Get product details
 
 #### Products (Admin Only)
-- `POST /api/v1/products` - Create product
-- `PUT /api/v1/products/:id` - Update product
+- `POST /api/v1/products` - Create product (with optional image upload)
+- `PUT /api/v1/products/:id` - Update product (with optional image upload)
 - `DELETE /api/v1/products/:id` - Delete product (soft delete)
 
 #### Orders (Authenticated)
 - `POST /api/v1/orders` - Place new order
 - `GET /api/v1/orders` - Get order history (with filtering)
 - `GET /api/v1/orders/:id` - Get order details
+
+#### Orders (Admin Only)
+- `PATCH /api/v1/orders/:id/status` - Update order status
 
 ### Advanced Filtering
 
@@ -330,6 +344,61 @@ GET /api/v1/orders?status=delivered&minPrice=500&sort=-totalPrice
 ```
 
 **For complete filtering documentation, see [ADVANCED_FILTERING_GUIDE.md](ADVANCED_FILTERING_GUIDE.md)**
+
+### File Upload (Product Images)
+
+The API supports optional image uploads for products using **Multer** with local disk storage.
+
+**Features:**
+- ✅ Optional single image per product
+- ✅ Supported formats: JPEG, PNG, GIF, WebP, PDF
+- ✅ Maximum file size: 5MB
+- ✅ UUID-based filenames for uniqueness
+- ✅ Images stored in `uploads/products/` directory
+- ✅ Automatic path transformation to API-accessible URLs
+- ✅ Static file serving at `/api/uploads/products/`
+
+**Creating a product with image (cURL):**
+```bash
+curl -X POST http://localhost:5000/api/v1/products \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "name=Wireless Headphones" \
+  -F "description=High-quality wireless headphones" \
+  -F "price=99.99" \
+  -F "stock=50" \
+  -F "category=Electronics" \
+  -F "productImage=@/path/to/image.jpg"
+```
+
+**Response includes image URL:**
+```json
+{
+  "success": true,
+  "message": "Product created successfully",
+  "data": {
+    "_id": "507f1f77bcf86cd799439011",
+    "name": "Wireless Headphones",
+    "productImage": "/api/uploads/products/abc123-uuid.jpg",
+    ...
+  }
+}
+```
+
+**Accessing uploaded images:**
+```bash
+# Direct browser access
+http://localhost:5000/api/uploads/products/abc123-uuid.jpg
+
+# Or via cURL
+curl http://localhost:5000/api/uploads/products/abc123-uuid.jpg --output image.jpg
+```
+
+**Implementation Details:**
+- **Multer Helper**: `src/helpers/multer.helper.ts` handles file upload configuration
+- **Storage**: Files saved to `uploads/products/` with UUID filenames
+- **Path Transformation**: Automatically converts local paths to API URLs
+- **Validation**: File type and size validation at middleware level
+- **Static Serving**: Configured in `src/app.ts` for public access
 
 ## 🔧 Available Scripts
 
@@ -388,6 +457,13 @@ GET /api/v1/orders?status=delivered&minPrice=500&sort=-totalPrice
 - ✅ Stock management
 - ✅ Base classes for reusability
 - ✅ Comprehensive error handling
+- ✅ Redis caching with automatic invalidation
+- ✅ Rate limiting (100 req/15min API, 20 req/5min admin)
+- ✅ File upload for product images (Multer + local storage)
+- ✅ API versioning (v1)
+- ✅ Order status update endpoint (admin)
+- ✅ Sentry error tracking
+- ✅ Winston structured logging
 
 #### Phase 4: DevOps ✅
 - ✅ Docker setup (multi-stage builds)
@@ -400,14 +476,15 @@ GET /api/v1/orders?status=delivered&minPrice=500&sort=-totalPrice
 
 ### 🚧 Upcoming Enhancements
 
-- [ ] Redis caching implementation
-- [ ] Rate limiting
-- [ ] File upload for product images
+- [ ] Cloudinary integration for image hosting
+- [ ] Multiple images per product
+- [ ] Image optimization and thumbnails
 - [ ] Email notifications
 - [ ] Payment integration
 - [ ] Admin dashboard
 - [ ] Inventory management
 - [ ] Reporting and analytics
+- [ ] WebSocket for real-time updates
 
 ## 📝 Environment Variables
 

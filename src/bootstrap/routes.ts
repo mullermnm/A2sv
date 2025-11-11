@@ -4,8 +4,7 @@ import productRoutes from '@routes/product.routes';
 import orderRoutes from '@routes/order.routes';
 
 /**
- * Combines and exports all route modules
- * This is a placeholder - actual routes will be added in later phases
+ * Combines and exports all route modules with API versioning
  */
 const router = Router();
 
@@ -39,10 +38,14 @@ router.get('/ping', (_req: Request, res: Response) => {
 });
 
 /**
- * API Routes
+ * API v1 Routes
  */
-router.use('/auth', authRoutes); // POST /api/v1/auth/register, POST /api/v1/auth/login
-router.use('/products', productRoutes);
-router.use('/orders', orderRoutes);
+const v1Router = Router();
+v1Router.use('/auth', authRoutes); // POST /api/v1/auth/register, POST /api/v1/auth/login
+v1Router.use('/products', productRoutes);
+v1Router.use('/orders', orderRoutes);
+
+// Mount v1 routes
+router.use('/v1', v1Router);
 
 export default router;

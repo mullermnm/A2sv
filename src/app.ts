@@ -56,6 +56,10 @@ const createApp = (): Application => {
     swaggerUi.setup(swaggerDocument, {
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: 'A2SV E-commerce API Docs',
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+      },
     })
   );
 

@@ -3,6 +3,8 @@ import { authenticate } from '@middlewares/auth.middleware';
 import { OrderController } from '@controllers/order.controller';
 import { orderLimiter, apiLimiter } from '@middlewares/rateLimiter.middleware';
 import { asyncHandler } from '@helpers/asyncHandler';
+import { validate } from '@validators/middleware';
+import { createOrderSchema } from '@validators/schemas/order.validator';
 
 const router = Router();
 const orderController = new OrderController();
@@ -19,6 +21,7 @@ router.post(
   '/',
   orderLimiter,
   authenticate,
+  validate(createOrderSchema),
   asyncHandler(orderController.placeOrder.bind(orderController))
 );
 

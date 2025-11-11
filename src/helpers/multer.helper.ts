@@ -88,11 +88,20 @@ const saveFileToBody = (req: Request, fieldname: string): void => {
   if (req.file && req.file.fieldname === fieldname) {
     let filePath = req.file.path;
 
+    // Normalize path separators to forward slashes
+    const normalizedPath = filePath.replace(/\\/g, '/');
+
     // Transform 'uploads/' paths to API-accessible format
-    if (filePath.startsWith('uploads/')) {
+    if (normalizedPath.startsWith('uploads/')) {
       // Extract the part after 'uploads/' and create API path
-      const relativePath = filePath.replace(/\\/g, '/').substring('uploads/'.length);
-      filePath = `/api/uploads/${relativePath}`;
+      // Remove fieldname subfolder if present (e.g., uploads/products/productImage/file.jpg -> /api/uploads/products/file.jpg)
+      const pathParts = normalizedPath.substring('uploads/'.length).split('/');
+      // If there are more than 2 parts, remove the middle one (fieldname folder)
+      const cleanPath =
+        pathParts.length > 2
+          ? `${pathParts[0]}/${pathParts[pathParts.length - 1]}`
+          : pathParts.join('/');
+      filePath = `/api/uploads/${cleanPath}`;
     }
 
     // Store the transformed path in the document field

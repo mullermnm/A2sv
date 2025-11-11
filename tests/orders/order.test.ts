@@ -38,7 +38,7 @@ describe('Order Management Tests', () => {
     app = createApp();
 
     // Create admin user and get token
-    const adminResponse = await request(app).post('/api/auth/register').send({
+    const adminResponse = await request(app).post('/api/v1/auth/register').send({
       username: 'adminuser',
       email: 'admin@test.com',
       password: 'Admin123!@#',
@@ -47,7 +47,7 @@ describe('Order Management Tests', () => {
     adminToken = adminResponse.body.data.token;
 
     // Create regular user and get token
-    const userResponse = await request(app).post('/api/auth/register').send({
+    const userResponse = await request(app).post('/api/v1/auth/register').send({
       username: 'regularuser',
       email: 'user@test.com',
       password: 'User123!@#',
@@ -57,7 +57,7 @@ describe('Order Management Tests', () => {
 
     // Create test products
     const product1Response = await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Test Product 1',
@@ -69,7 +69,7 @@ describe('Order Management Tests', () => {
     productId1 = product1Response.body.data._id;
 
     const product2Response = await request(app)
-      .post('/api/products')
+      .post('/api/v1/products')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Test Product 2',
@@ -105,9 +105,9 @@ describe('Order Management Tests', () => {
   });
 
   /**
-   * Test: Place Order (User Story 9) - POST /api/orders
+   * Test: Place Order (User Story 9) - POST /api/v1/orders
    */
-  describe('POST /api/orders - Place Order (User Story 9)', () => {
+  describe('POST /api/v1/orders - Place Order (User Story 9)', () => {
     describe('Success Cases', () => {
       it('should place order with single product (201)', async () => {
         const orderData = {
@@ -121,7 +121,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(201);
@@ -142,7 +142,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(201);
@@ -160,7 +160,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(201);
@@ -177,14 +177,14 @@ describe('Order Management Tests', () => {
         };
 
         await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(201);
 
         // Verify stock was updated
         const productResponse = await request(app)
-          .get(`/api/products/${productId1}`)
+          .get(`/api/v1/products/${productId1}`)
           .expect(200);
 
         expect(productResponse.body.data.stock).toBe(45); // 50 - 5
@@ -196,7 +196,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(201);
@@ -210,7 +210,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(201);
@@ -228,7 +228,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
@@ -246,14 +246,14 @@ describe('Order Management Tests', () => {
         };
 
         await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
 
         // Verify stock was NOT updated for product1 (transaction rollback)
         const product1Response = await request(app)
-          .get(`/api/products/${productId1}`)
+          .get(`/api/v1/products/${productId1}`)
           .expect(200);
 
         expect(product1Response.body.data.stock).toBe(50); // Original stock
@@ -268,7 +268,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(404);
@@ -283,7 +283,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
@@ -296,24 +296,27 @@ describe('Order Management Tests', () => {
     describe('Request Validation (400 Bad Request)', () => {
       it('should reject order without products array', async () => {
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send({})
           .expect(400);
 
         expect(response.body.success).toBe(false);
-        expect(response.body.message).toContain('Products array is required');
+        expect(response.body.errors).toBeDefined();
+        expect(Array.isArray(response.body.errors)).toBe(true);
+        expect(response.body.errors.length).toBeGreaterThan(0);
       });
 
       it('should reject order with empty products array', async () => {
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send({ products: [] })
           .expect(400);
 
         expect(response.body.success).toBe(false);
-        expect(response.body.message).toContain('at least one product');
+        expect(response.body.errors).toBeDefined();
+        expect(response.body.errors.some((err: string) => err.includes('products') || err.includes('least'))).toBe(true);
       });
 
       it('should reject order with missing productId', async () => {
@@ -322,7 +325,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
@@ -336,7 +339,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
@@ -350,7 +353,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
@@ -364,7 +367,7 @@ describe('Order Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .send(orderData)
           .expect(400);
@@ -379,7 +382,7 @@ describe('Order Management Tests', () => {
           products: [{ productId: productId1, quantity: 1 }],
         };
 
-        await request(app).post('/api/orders').send(orderData).expect(401);
+        await request(app).post('/api/v1/orders').send(orderData).expect(401);
       });
 
       it('should reject order with invalid token', async () => {
@@ -388,7 +391,7 @@ describe('Order Management Tests', () => {
         };
 
         await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', 'Bearer invalid-token')
           .send(orderData)
           .expect(401);
@@ -397,20 +400,20 @@ describe('Order Management Tests', () => {
   });
 
   /**
-   * Test: Get Order History (User Story 10) - GET /api/orders
+   * Test: Get Order History (User Story 10) - GET /api/v1/orders
    */
-  describe('GET /api/orders - Get Order History (User Story 10)', () => {
+  describe('GET /api/v1/orders - Get Order History (User Story 10)', () => {
     beforeEach(async () => {
       // Create some orders for the user
       await request(app)
-        .post('/api/orders')
+        .post('/api/v1/orders')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           products: [{ productId: productId1, quantity: 1 }],
         });
 
       await request(app)
-        .post('/api/orders')
+        .post('/api/v1/orders')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           products: [{ productId: productId2, quantity: 2 }],
@@ -420,7 +423,7 @@ describe('Order Management Tests', () => {
     describe('Success Cases', () => {
       it('should return user order history (200)', async () => {
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -432,7 +435,7 @@ describe('Order Management Tests', () => {
       it('should only return orders for authenticated user', async () => {
         // Create order with admin user
         await request(app)
-          .post('/api/orders')
+          .post('/api/v1/orders')
           .set('Authorization', `Bearer ${adminToken}`)
           .send({
             products: [{ productId: productId1, quantity: 1 }],
@@ -440,7 +443,7 @@ describe('Order Management Tests', () => {
 
         // Regular user should only see their orders
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -452,7 +455,7 @@ describe('Order Management Tests', () => {
 
       it('should return orders sorted by creation date (newest first)', async () => {
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -466,7 +469,7 @@ describe('Order Management Tests', () => {
 
       it('should include order details in response', async () => {
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -483,7 +486,7 @@ describe('Order Management Tests', () => {
     describe('Pagination', () => {
       it('should support pagination with page and limit', async () => {
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .query({ page: 1, limit: 1 })
           .expect(200);
@@ -497,7 +500,7 @@ describe('Order Management Tests', () => {
 
       it('should return correct pagination metadata', async () => {
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .query({ page: 1, limit: 10 })
           .expect(200);
@@ -509,7 +512,7 @@ describe('Order Management Tests', () => {
 
       it('should default to page 1 and limit 10', async () => {
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -520,12 +523,12 @@ describe('Order Management Tests', () => {
 
     describe('Authentication (401)', () => {
       it('should reject request without authentication', async () => {
-        await request(app).get('/api/orders').expect(401);
+        await request(app).get('/api/v1/orders').expect(401);
       });
 
       it('should reject request with invalid token', async () => {
         await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', 'Bearer invalid-token')
           .expect(401);
       });
@@ -534,14 +537,14 @@ describe('Order Management Tests', () => {
     describe('Empty Order History', () => {
       it('should return empty array if user has no orders', async () => {
         // Create new user with no orders
-        const newUserResponse = await request(app).post('/api/auth/register').send({
+        const newUserResponse = await request(app).post('/api/v1/auth/register').send({
           username: 'newuser',
           email: 'newuser@test.com',
           password: 'NewUser123!@#',
         });
 
         const response = await request(app)
-          .get('/api/orders')
+          .get('/api/v1/orders')
           .set('Authorization', `Bearer ${newUserResponse.body.data.token}`)
           .expect(200);
 
@@ -553,15 +556,15 @@ describe('Order Management Tests', () => {
   });
 
   /**
-   * Test: Get Single Order by ID - GET /api/orders/:id
+   * Test: Get Single Order by ID - GET /api/v1/orders/:id
    */
-  describe('GET /api/orders/:id - Get Single Order Details', () => {
+  describe('GET /api/v1/orders/:id - Get Single Order Details', () => {
     let orderId: string;
 
     beforeEach(async () => {
       // Create an order
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/v1/orders')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           products: [{ productId: productId1, quantity: 1 }],
@@ -573,7 +576,7 @@ describe('Order Management Tests', () => {
     describe('Success Cases', () => {
       it('should return order details (200)', async () => {
         const response = await request(app)
-          .get(`/api/orders/${orderId}`)
+          .get(`/api/v1/orders/${orderId}`)
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -585,7 +588,7 @@ describe('Order Management Tests', () => {
 
       it('should include complete order information', async () => {
         const response = await request(app)
-          .get(`/api/orders/${orderId}`)
+          .get(`/api/v1/orders/${orderId}`)
           .set('Authorization', `Bearer ${userToken}`)
           .expect(200);
 
@@ -604,7 +607,7 @@ describe('Order Management Tests', () => {
       it('should not allow user to access another user order (404)', async () => {
         // Try to access the order with admin token (different user)
         await request(app)
-          .get(`/api/orders/${orderId}`)
+          .get(`/api/v1/orders/${orderId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(404);
       });
@@ -615,14 +618,14 @@ describe('Order Management Tests', () => {
         const fakeOrderId = new mongoose.Types.ObjectId().toString();
 
         await request(app)
-          .get(`/api/orders/${fakeOrderId}`)
+          .get(`/api/v1/orders/${fakeOrderId}`)
           .set('Authorization', `Bearer ${userToken}`)
           .expect(404);
       });
 
       it('should return 400 for invalid order ID', async () => {
         await request(app)
-          .get('/api/orders/invalid-id')
+          .get('/api/v1/orders/invalid-id')
           .set('Authorization', `Bearer ${userToken}`)
           .expect(400);
       });
@@ -630,7 +633,7 @@ describe('Order Management Tests', () => {
 
     describe('Authentication (401)', () => {
       it('should reject request without authentication', async () => {
-        await request(app).get(`/api/orders/${orderId}`).expect(401);
+        await request(app).get(`/api/v1/orders/${orderId}`).expect(401);
       });
     });
   });
@@ -641,7 +644,7 @@ describe('Order Management Tests', () => {
   describe('Response Format Consistency', () => {
     it('should have consistent success response format for place order', async () => {
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/v1/orders')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           products: [{ productId: productId1, quantity: 1 }],
@@ -656,7 +659,7 @@ describe('Order Management Tests', () => {
 
     it('should have consistent error response format', async () => {
       const response = await request(app)
-        .post('/api/orders')
+        .post('/api/v1/orders')
         .set('Authorization', `Bearer ${userToken}`)
         .send({
           products: [], // Invalid: empty array
@@ -670,7 +673,7 @@ describe('Order Management Tests', () => {
 
     it('should have consistent paginated response format', async () => {
       const response = await request(app)
-        .get('/api/orders')
+        .get('/api/v1/orders')
         .set('Authorization', `Bearer ${userToken}`)
         .expect(200);
 

@@ -93,22 +93,8 @@ export class OrderController extends BaseController<IOrder> {
    */
   async placeOrder(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      // Check authentication
-      if (!req.user || !req.user.userId) {
-        return ErrorResponse.send(res, 'Unauthorized', 401);
-      }
-
-      const userId = req.user.userId;
+      const userId = req.user!.userId;
       const orderData = req.body as PlaceOrderBody;
-
-      // Validate request body
-      if (!orderData.products || !Array.isArray(orderData.products)) {
-        return ErrorResponse.send(res, 'Products array is required', 400);
-      }
-
-      if (orderData.products.length === 0) {
-        return ErrorResponse.send(res, 'Order must contain at least one product', 400);
-      }
 
       // Validate each product item
       for (const item of orderData.products) {

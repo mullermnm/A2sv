@@ -10,7 +10,7 @@ import bcrypt from 'bcrypt';
  * Integration Tests for User Login (User Story 2)
  * Tests all acceptance criteria from requirements
  */
-describe('POST /api/auth/login - User Login (User Story 2)', () => {
+describe('POST /api/v1/auth/login - User Login (User Story 2)', () => {
   let app: Application;
   let mongoServer: MongoMemoryServer;
 
@@ -71,7 +71,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect('Content-Type', /json/)
         .expect(200);
@@ -102,7 +102,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(200);
 
@@ -137,7 +137,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       });
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({
           email: adminUser.email,
           password: adminUser.password,
@@ -159,7 +159,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(401);
 
@@ -174,7 +174,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(401);
 
@@ -185,7 +185,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
     it('should not reveal whether email exists (security)', async () => {
       // Try with non-existent email
       const response1 = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({
           email: 'nonexistent@example.com',
           password: 'SomePass123!',
@@ -194,7 +194,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
 
       // Try with existing email but wrong password
       const response2 = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({
           email: testUser.email,
           password: 'WrongPass123!',
@@ -217,7 +217,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(400);
 
@@ -232,7 +232,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(400);
 
@@ -246,7 +246,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(400);
 
@@ -256,7 +256,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
 
     it('should reject login with empty body', async () => {
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send({})
         .expect(400);
 
@@ -271,7 +271,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(400);
 
@@ -290,7 +290,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(200);
 
@@ -306,7 +306,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(401);
 
@@ -322,7 +322,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
       };
 
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(400);
 
@@ -349,7 +349,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
 
       // Verify login works with correct password
       const response = await request(app)
-        .post('/api/auth/login')
+        .post('/api/v1/auth/login')
         .send(loginData)
         .expect(200);
 
@@ -367,7 +367,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
 
       for (const password of variations) {
         const response = await request(app)
-          .post('/api/auth/login')
+          .post('/api/v1/auth/login')
           .send({
             email: testUser.email,
             password,
@@ -393,7 +393,7 @@ describe('POST /api/auth/login - User Login (User Story 2)', () => {
 
       for (const email of emailVariations) {
         const response = await request(app)
-          .post('/api/auth/login')
+          .post('/api/v1/auth/login')
           .send({
             email,
             password: testUser.password,

@@ -2,6 +2,8 @@ import request from 'supertest';
 import { Application } from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import path from 'path';
+import fs from 'fs';
 import createApp from '../../src/app';
 import User from '../../src/models/user.model';
 import Product from '../../src/models/product.model';
@@ -32,7 +34,7 @@ describe('Product Management Tests', () => {
     app = createApp();
 
     // Create admin user and get token
-    const adminResponse = await request(app).post('/api/auth/register').send({
+    const adminResponse = await request(app).post('/api/v1/auth/register').send({
       username: 'adminuser',
       email: 'admin@test.com',
       password: 'Admin123!@#',
@@ -42,7 +44,7 @@ describe('Product Management Tests', () => {
     adminUserId = adminResponse.body.data.user._id;
 
     // Create regular user and get token
-    const userResponse = await request(app).post('/api/auth/register').send({
+    const userResponse = await request(app).post('/api/v1/auth/register').send({
       username: 'regularuser',
       email: 'user@test.com',
       password: 'User123!@#',
@@ -66,7 +68,7 @@ describe('Product Management Tests', () => {
   /**
    * Test: Create Product (User Story 3) - Admin Only
    */
-  describe('POST /api/products - Create Product (User Story 3)', () => {
+  describe('POST /api/v1/products - Create Product (User Story 3)', () => {
     describe('Success Cases', () => {
       it('should create a new product with valid data and admin token (201)', async () => {
         const productData = {
@@ -78,7 +80,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/products')
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${adminToken}`)
           .send(productData)
           .expect(201);
@@ -101,7 +103,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/products')
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${adminToken}`)
           .send(productData)
           .expect(201);
@@ -121,7 +123,7 @@ describe('Product Management Tests', () => {
           category: 'books',
         };
 
-        await request(app).post('/api/products').send(productData).expect(401);
+        await request(app).post('/api/v1/products').send(productData).expect(401);
       });
 
       it('should reject request from regular user (403)', async () => {
@@ -134,7 +136,7 @@ describe('Product Management Tests', () => {
         };
 
         await request(app)
-          .post('/api/products')
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${userToken}`)
           .send(productData)
           .expect(403);
@@ -151,7 +153,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/products')
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${adminToken}`)
           .send(productData)
           .expect(400);
@@ -169,7 +171,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/products')
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${adminToken}`)
           .send(productData)
           .expect(400);
@@ -187,7 +189,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .post('/api/products')
+          .post('/api/v1/products')
           .set('Authorization', `Bearer ${adminToken}`)
           .send(productData)
           .expect(400);
@@ -195,18 +197,97 @@ describe('Product Management Tests', () => {
         expect(response.body.errors).toBeDefined();
       });
     });
+
+    describe('File Upload Tests', () => {
+      const testImagePath = path.join(__dirname, '..', 'fixtures', 'test-image.png');
+
+      // Create a test image if it doesn't exist
+      beforeAll(() => {
+        const fixturesDir = path.join(__dirname, '..', 'fixtures');
+        if (!fs.existsSync(fixturesDir)) {
+          fs.mkdirSync(fixturesDir, { recursive: true });
+        }
+        if (!fs.existsSync(testImagePath)) {
+          // Create a minimal 1x1 PNG image (Base64 encoded)
+          const pngBuffer = Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+            'base64'
+          );
+          fs.writeFileSync(testImagePath, pngBuffer);
+        }
+      });
+
+      it('should create product with image upload (multipart/form-data)', async () => {
+        const response = await request(app)
+          .post('/api/v1/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .field('name', 'Product with Image')
+          .field('description', 'This product has an image')
+          .field('price', '149.99')
+          .field('stock', '25')
+          .field('category', 'Electronics')
+          .attach('productImage', testImagePath)
+          .expect(201);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toHaveProperty('productImage');
+        expect(response.body.data.productImage).toMatch(/^\/api\/uploads\/products\//);
+      });
+
+      it('should create product without image (image is optional)', async () => {
+        const productData = {
+          name: 'Product without Image',
+          description: 'This product has no image',
+          price: 79.99,
+          stock: 15,
+          category: 'Books',
+        };
+
+        const response = await request(app)
+          .post('/api/v1/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send(productData)
+          .expect(201);
+
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.productImage).toBeUndefined();
+      });
+
+      it('should reject file larger than 5MB', async () => {
+        // Create a large buffer (> 5MB)
+        const largeFile = Buffer.alloc(6 * 1024 * 1024); // 6MB
+        const largePath = path.join(__dirname, '..', 'fixtures', 'large-file.png');
+        fs.writeFileSync(largePath, largeFile);
+
+        const response = await request(app)
+          .post('/api/v1/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .field('name', 'Product with Large Image')
+          .field('description', 'This should fail')
+          .field('price', '99.99')
+          .field('stock', '10')
+          .field('category', 'Electronics')
+          .attach('productImage', largePath);
+
+        // Cleanup
+        fs.unlinkSync(largePath);
+
+        // Should reject with 400 or 413
+        expect([400, 413]).toContain(response.status);
+      });
+    });
   });
 
   /**
    * Test: Update Product (User Story 4) - Admin Only
    */
-  describe('PUT /api/products/:id - Update Product (User Story 4)', () => {
+  describe('PUT /api/v1/products/:id - Update Product (User Story 4)', () => {
     let productId: string;
 
     beforeEach(async () => {
       // Create a product before each test
       const response = await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Original Product',
@@ -226,7 +307,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .put(`/api/products/${productId}`)
+          .put(`/api/v1/products/${productId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send(updateData)
           .expect(200);
@@ -244,7 +325,7 @@ describe('Product Management Tests', () => {
         };
 
         const response = await request(app)
-          .put(`/api/products/${productId}`)
+          .put(`/api/v1/products/${productId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send(updateData)
           .expect(200);
@@ -260,7 +341,7 @@ describe('Product Management Tests', () => {
         const updateData = { name: 'Updated' };
 
         await request(app)
-          .put(`/api/products/${fakeId}`)
+          .put(`/api/v1/products/${fakeId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send(updateData)
           .expect(404);
@@ -270,7 +351,7 @@ describe('Product Management Tests', () => {
         const updateData = { name: 'Updated' };
 
         await request(app)
-          .put(`/api/products/${productId}`)
+          .put(`/api/v1/products/${productId}`)
           .set('Authorization', `Bearer ${userToken}`)
           .send(updateData)
           .expect(403);
@@ -280,7 +361,7 @@ describe('Product Management Tests', () => {
         const updateData = { name: 'Updated' };
 
         await request(app)
-          .put(`/api/products/${productId}`)
+          .put(`/api/v1/products/${productId}`)
           .send(updateData)
           .expect(401);
       });
@@ -290,11 +371,11 @@ describe('Product Management Tests', () => {
   /**
    * Test: Get Products with Pagination and Search (User Stories 5 & 6) - Public
    */
-  describe('GET /api/products - Get Products List (User Stories 5 & 6)', () => {
+  describe('GET /api/v1/products - Get Products List (User Stories 5 & 6)', () => {
     beforeEach(async () => {
       // Create multiple products for pagination/search tests
       await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Laptop Computer',
@@ -305,7 +386,7 @@ describe('Product Management Tests', () => {
         });
 
       await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Wireless Mouse',
@@ -316,7 +397,7 @@ describe('Product Management Tests', () => {
         });
 
       await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Programming Book',
@@ -329,7 +410,7 @@ describe('Product Management Tests', () => {
 
     describe('Success Cases - Public Access', () => {
       it('should return all products without authentication (200)', async () => {
-        const response = await request(app).get('/api/products').expect(200);
+        const response = await request(app).get('/api/v1/products').expect(200);
 
         expect(response.body.success).toBe(true);
         expect(response.body.data).toBeInstanceOf(Array);
@@ -338,7 +419,7 @@ describe('Product Management Tests', () => {
 
       it('should return paginated results', async () => {
         const response = await request(app)
-          .get('/api/products')
+          .get('/api/v1/products')
           .query({ page: 1, limit: 2 })
           .expect(200);
 
@@ -350,7 +431,7 @@ describe('Product Management Tests', () => {
 
       it('should search products by name (case-insensitive)', async () => {
         const response = await request(app)
-          .get('/api/products')
+          .get('/api/v1/products')
           .query({ search: 'laptop' })
           .expect(200);
 
@@ -360,7 +441,7 @@ describe('Product Management Tests', () => {
 
       it('should search products with partial match', async () => {
         const response = await request(app)
-          .get('/api/products')
+          .get('/api/v1/products')
           .query({ search: 'Mou' })
           .expect(200);
 
@@ -370,7 +451,7 @@ describe('Product Management Tests', () => {
 
       it('should return empty array for non-matching search', async () => {
         const response = await request(app)
-          .get('/api/products')
+          .get('/api/v1/products')
           .query({ search: 'NonExistentProduct' })
           .expect(200);
 
@@ -382,7 +463,7 @@ describe('Product Management Tests', () => {
     describe('Pagination Details', () => {
       it('should include correct pagination metadata', async () => {
         const response = await request(app)
-          .get('/api/products')
+          .get('/api/v1/products')
           .query({ page: 1, limit: 2 })
           .expect(200);
 
@@ -397,12 +478,12 @@ describe('Product Management Tests', () => {
   /**
    * Test: Get Product Details (User Story 7) - Public
    */
-  describe('GET /api/products/:id - Get Product Details (User Story 7)', () => {
+  describe('GET /api/v1/products/:id - Get Product Details (User Story 7)', () => {
     let productId: string;
 
     beforeEach(async () => {
       const response = await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Test Product',
@@ -417,7 +498,7 @@ describe('Product Management Tests', () => {
     describe('Success Cases', () => {
       it('should return product details without authentication (200)', async () => {
         const response = await request(app)
-          .get(`/api/products/${productId}`)
+          .get(`/api/v1/products/${productId}`)
           .expect(200);
 
         expect(response.body.success).toBe(true);
@@ -428,7 +509,7 @@ describe('Product Management Tests', () => {
 
       it('should return complete product information', async () => {
         const response = await request(app)
-          .get(`/api/products/${productId}`)
+          .get(`/api/v1/products/${productId}`)
           .expect(200);
 
         expect(response.body.data).toHaveProperty('name');
@@ -444,11 +525,11 @@ describe('Product Management Tests', () => {
       it('should return 404 for non-existent product', async () => {
         const fakeId = new mongoose.Types.ObjectId().toString();
 
-        await request(app).get(`/api/products/${fakeId}`).expect(404);
+        await request(app).get(`/api/v1/products/${fakeId}`).expect(404);
       });
 
       it('should return 400 for invalid product ID format', async () => {
-        await request(app).get('/api/products/invalid-id').expect(400);
+        await request(app).get('/api/v1/products/invalid-id').expect(400);
       });
     });
   });
@@ -456,12 +537,12 @@ describe('Product Management Tests', () => {
   /**
    * Test: Delete Product (User Story 8) - Admin Only
    */
-  describe('DELETE /api/products/:id - Delete Product (User Story 8)', () => {
+  describe('DELETE /api/v1/products/:id - Delete Product (User Story 8)', () => {
     let productId: string;
 
     beforeEach(async () => {
       const response = await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Product to Delete',
@@ -476,27 +557,27 @@ describe('Product Management Tests', () => {
     describe('Success Cases', () => {
       it('should delete product with admin token (200)', async () => {
         const response = await request(app)
-          .delete(`/api/products/${productId}`)
+          .delete(`/api/v1/products/${productId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
 
         expect(response.body.success).toBe(true);
 
         // Verify product is deleted
-        await request(app).get(`/api/products/${productId}`).expect(404);
+        await request(app).get(`/api/v1/products/${productId}`).expect(404);
       });
     });
 
     describe('Authorization Tests', () => {
       it('should reject request from regular user (403)', async () => {
         await request(app)
-          .delete(`/api/products/${productId}`)
+          .delete(`/api/v1/products/${productId}`)
           .set('Authorization', `Bearer ${userToken}`)
           .expect(403);
       });
 
       it('should reject request without authentication (401)', async () => {
-        await request(app).delete(`/api/products/${productId}`).expect(401);
+        await request(app).delete(`/api/v1/products/${productId}`).expect(401);
       });
     });
 
@@ -505,14 +586,14 @@ describe('Product Management Tests', () => {
         const fakeId = new mongoose.Types.ObjectId().toString();
 
         await request(app)
-          .delete(`/api/products/${fakeId}`)
+          .delete(`/api/v1/products/${fakeId}`)
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(404);
       });
 
       it('should return 404 for invalid product ID format', async () => {
         await request(app)
-          .delete('/api/products/invalid-id')
+          .delete('/api/v1/products/invalid-id')
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(404);
       });
@@ -525,7 +606,7 @@ describe('Product Management Tests', () => {
   describe('Response Format Consistency', () => {
     it('should have consistent success response format', async () => {
       const response = await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Test Product',
@@ -544,7 +625,7 @@ describe('Product Management Tests', () => {
 
     it('should have consistent error response format', async () => {
       const response = await request(app)
-        .post('/api/products')
+        .post('/api/v1/products')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Test',
