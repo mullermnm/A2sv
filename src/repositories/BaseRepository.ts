@@ -293,31 +293,6 @@ export abstract class BaseRepository<T extends Document> implements IBaseReposit
   }
 
   /**
-   * Count documents matching filter
-   */
-  async count(filter: FilterQuery<T> = {}): Promise<number> {
-    try {
-      return await this.model.countDocuments(filter);
-    } catch (error) {
-      console.error('Error in count:', error);
-      return 0;
-    }
-  }
-
-  /**
-   * Check if document exists
-   */
-  async exists(filter: FilterQuery<T>): Promise<boolean> {
-    try {
-      const count = await this.model.countDocuments(filter).limit(1);
-      return count > 0;
-    } catch (error) {
-      console.error('Error in exists:', error);
-      return false;
-    }
-  }
-
-  /**
    * Start a MongoDB transaction session
    * Use this for operations that need atomicity (e.g., order placement with stock updates)
    *

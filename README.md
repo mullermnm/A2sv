@@ -171,27 +171,34 @@ npm install
 Create a `.env` file in the root directory (or copy from `.env.example`):
 
 ```env
-# Server
+# Server Configuration
 NODE_ENV=development
 PORT=5000
 
-# Database
-MONGODB_URI=mongodb://localhost:27017/a2sv_ecommerce
+# Database Configuration
+# With replica set for transactions support
+MONGODB_URI=mongodb://localhost:27017/a2sv_ecommerce?replicaSet=rs0&directConnection=true
 
-# Redis
+# Redis Configuration
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=
+REDIS_TTL=3600
 
-# JWT
-JWT_SECRET=your-secret-key-change-in-production
+# JWT Configuration
+JWT_SECRET=dev-secret-key-change-in-production
 JWT_EXPIRES_IN=7d
 
 # Security
-BCRYPT_SALT_ROUNDS=12
+BCRYPT_SALT_ROUNDS=10
 
 # CORS
 CORS_ORIGIN=*
+
+# File Upload
+MAX_FILE_SIZE=5242880
+UPLOAD_DIR=uploads
+
 ```
 
 ### Step 4: ⚠️ CRITICAL - Setup MongoDB Replica Set for Transactions

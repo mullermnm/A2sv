@@ -16,10 +16,6 @@ export class UserController extends BaseController<IUser> {
   constructor(userService: UserService) {
     super(userService);
     this.userService = userService;
-
-    // Bind custom methods
-    this.register = this.register.bind(this);
-    this.login = this.login.bind(this);
   }
 
   /**
