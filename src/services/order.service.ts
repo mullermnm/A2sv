@@ -42,10 +42,25 @@ export class OrderService extends BaseService<IOrder> {
         return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
+
       const orderProducts: IOrderProduct[] = [];
 
       // Process each product in the order
       for (const item of orderData.products) {
+        // Validate productId
+        if (!Types.ObjectId.isValid(item.productId)) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error(`Invalid product ID: ${item.productId}`);
+        }
+
+        // Validate quantity
+        if (!item.quantity || item.quantity < 1) {
+          await session.abortTransaction();
+          await session.endSession();
+          throw new Error('Product quantity must be at least 1');
+        }
+
         // Fetch product details within transaction
         const productResult = await this.productRepository.findByIdWithTransaction(
           item.productId,
@@ -93,7 +108,8 @@ export class OrderService extends BaseService<IOrder> {
       }
 
       // Create the order within transaction
-      const createResult = await this.repository.createWithTransaction(
+      const orderRepo = this.repository as OrderRepository;
+      const createResult = await orderRepo.createWithTransaction(
         {
           userId: new Types.ObjectId(userId),
           products: orderProducts,
@@ -107,7 +123,7 @@ export class OrderService extends BaseService<IOrder> {
       if (!createResult.success) {
         await session.abortTransaction();
         await session.endSession();
-        return createResult;
+        throw new Error('Failed to create order');
       }
 
       // Commit transaction - all operations succeeded
@@ -127,7 +143,20 @@ export class OrderService extends BaseService<IOrder> {
       console.error('Error in placeOrder:', error);
 
       const errorMessage = error instanceof Error ? error.message : ErrorMessages.OPERATION_FAILED;
-      return ErrorResponse.create(errorMessage, HttpStatus.INTERNAL_SERVER_ERROR);
+
+      // Determine appropriate status code based on error
+      let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      if (errorMessage.includes('not found')) {
+        statusCode = HttpStatus.NOT_FOUND;
+      } else if (
+        errorMessage.includes('Invalid') ||
+        errorMessage.includes('Insufficient') ||
+        errorMessage.includes('must')
+      ) {
+        statusCode = HttpStatus.BAD_REQUEST;
+      }
+
+      return ErrorResponse.create(errorMessage, statusCode);
     }
   }
 }

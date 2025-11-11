@@ -110,6 +110,11 @@ export class OrderController extends BaseController<IOrder> {
     try {
       const id = req.params.id as string;
 
+      // check if order id is valid
+      if (!Types.ObjectId.isValid(id)) {
+        return ErrorResponse.send(res, 'Invalid order ID', 400);
+      }
+
       // make sure user can only see his order
       const result = await orderRepository.findOne({
         _id: new Types.ObjectId(id),
