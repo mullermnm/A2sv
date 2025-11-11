@@ -42,7 +42,6 @@ export class OrderService extends BaseService<IOrder> {
         return ErrorResponse.createBadRequest(ErrorMessages.INVALID_ID);
       }
 
-
       const orderProducts: IOrderProduct[] = [];
 
       // Process each product in the order
